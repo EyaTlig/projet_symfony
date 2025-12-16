@@ -1,0 +1,336 @@
+{% extends 'base_client.html.twig' %}
+
+{% block title %}Mes Abonnés{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold mb-1">
+                    <i class="bi bi-people-fill text-primary me-2"></i>Mes Abonnés
+                </h1>
+                <p class="text-muted mb-0">
+                    Gérez vos abonnés et communiquez avec eux
+                </p>
+            </div>
+            <div>
+            <span class="badge bg-primary fs-5 px-4 py-2">
+                {{ subscribers|length }} abonné{{ subscribers|length > 1 ? 's' : '' }}
+            </span>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Total Abonnés</p>
+                                <h2 class="mb-0 fw-bold">{{ subscribers|length }}</h2>
+                            </div>
+                            <div class="icon-wrapper bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-people text-primary fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Ce mois</p>
+                                <h2 class="mb-0 fw-bold">
+                                    {% set thisMonthCount = 0 %}
+                                    {% for sub in subscribers %}
+                                        {% if sub.subscribedAt|date('Y-m') == "now"|date('Y-m') %}
+                                            {% set thisMonthCount = thisMonthCount + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ thisMonthCount }}
+                                </h2>
+                            </div>
+                            <div class="icon-wrapper bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-calendar-check text-success fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Actifs</p>
+                                <h2 class="mb-0 fw-bold">
+                                    {% set activeCount = subscribers|filter(s => s.isActive)|length %}
+                                    {{ activeCount }}
+                                </h2>
+                            </div>
+                            <div class="icon-wrapper bg-info bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-check-circle text-info fs-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des abonnés -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                            <input type="text"
+                                   class="form-control border-start-0"
+                                   id="searchInput"
+                                   placeholder="Rechercher un abonné...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterSubscribers('all')">
+                                Tous
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterSubscribers('active')">
+                                Actifs
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterSubscribers('recent')">
+                                Récents
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                {% if subscribers|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Abonné</th>
+                                <th>Date d'abonnement</th>
+                                <th class="text-center">Statut</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="subscribersTable">
+                            {% for subscription in subscribers %}
+                                <tr class="subscriber-row"
+                                    data-name="{{ subscription.subscriber.name|lower }}"
+                                    data-email="{{ subscription.subscriber.email|lower }}"
+                                    data-status="{{ subscription.isActive ? 'active' : 'inactive' }}"
+                                    data-date="{{ subscription.subscribedAt|date('Y-m-d') }}">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-3">
+                                                {% if subscription.subscriber.photo %}
+                                                    <img src="{{ asset('uploads/' ~ subscription.subscriber.photo) }}"
+                                                         class="rounded-circle"
+                                                         width="40"
+                                                         height="40"
+                                                         alt="{{ subscription.subscriber.name }}">
+                                                {% else %}
+                                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                         style="width: 40px; height: 40px;">
+                                                        {{ subscription.subscriber.name|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <strong class="d-block">{{ subscription.subscriber.name }}</strong>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-envelope me-1"></i>{{ subscription.subscriber.email }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span>{{ subscription.subscribedAt|date('d/m/Y') }}</span>
+                                            <small class="text-muted">{{ subscription.subscribedAt|date('H:i') }}</small>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if subscription.isActive %}
+                                            <span class="badge bg-success bg-opacity-10 text-success">
+                                                <i class="bi bi-check-circle me-1"></i>Actif
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                                <i class="bi bi-x-circle me-1"></i>Inactif
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ path('messages_conversation', {id: subscription.subscriber.id}) }}"
+                                               class="btn btn-outline-primary"
+                                               title="Envoyer un message">
+                                                <i class="bi bi-chat-dots"></i>
+                                            </a>
+                                            <a href="{{ path('owner_profile', {id: subscription.subscriber.id}) }}"
+                                               class="btn btn-outline-secondary"
+                                               title="Voir le profil"
+                                               target="_blank">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <!-- État vide -->
+                    <div class="text-center py-5">
+                        <div class="empty-state">
+                            <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                                <i class="bi bi-people fs-1 text-muted"></i>
+                            </div>
+                            <h4 class="mb-2">Aucun abonné pour le moment</h4>
+                            <p class="text-muted mb-4">
+                                Les utilisateurs pourront s'abonner à vos services pour rester informés.
+                            </p>
+                            <a href="{{ path('owner_businesses') }}" class="btn btn-primary">
+                                <i class="bi bi-shop me-2"></i>Gérer mes businesses
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if subscribers|length > 0 %}
+                <div class="card-footer bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                        <span class="text-muted">
+                            Affichage de {{ subscribers|length }} abonné{{ subscribers|length > 1 ? 's' : '' }}
+                        </span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items-center;
+            justify-content-center;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items-center;
+            justify-content-center;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .subscriber-row {
+            transition: all 0.2s ease;
+        }
+
+        .subscriber-row:hover {
+            background-color: #f8f9fa;
+            transform: translateX(4px);
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .subscriber-row {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+
+    <script>
+        // Recherche en temps réel
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.subscriber-row');
+
+            rows.forEach(row => {
+                const name = row.dataset.name;
+                const email = row.dataset.email;
+
+                if (name.includes(filter) || email.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Filtrage par statut
+        function filterSubscribers(type) {
+            const rows = document.querySelectorAll('.subscriber-row');
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+
+            rows.forEach(row => {
+                const status = row.dataset.status;
+                const date = new Date(row.dataset.date);
+
+                let shouldShow = false;
+
+                switch(type) {
+                    case 'all':
+                        shouldShow = true;
+                        break;
+                    case 'active':
+                        shouldShow = status === 'active';
+                        break;
+                    case 'recent':
+                        shouldShow = date >= thirtyDaysAgo;
+                        break;
+                }
+
+                row.style.display = shouldShow ? '' : 'none';
+            });
+
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('.btn-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+    </script>
+{% endblock %}

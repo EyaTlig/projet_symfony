@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : mar. 16 déc. 2025 à 03:45
+-- Généré le : mar. 16 déc. 2025 à 22:36
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de données : `app_review_project`
+-- Base de données : `app_review`
 --
 
 -- --------------------------------------------------------
@@ -191,6 +191,32 @@ INSERT INTO `like_review` (`id`, `liked_at`, `user_id`, `review_id`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `message`
+--
+
+CREATE TABLE `message` (
+  `id` int(11) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `receiver_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `sent_at` datetime NOT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `read_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `message`
+--
+
+INSERT INTO `message` (`id`, `sender_id`, `receiver_id`, `content`, `sent_at`, `is_read`, `read_at`) VALUES
+(1, 1, 2, 'hello', '2025-12-16 20:51:53', 1, '2025-12-16 20:53:46'),
+(2, 2, 1, 'hi how are you', '2025-12-16 20:53:56', 1, '2025-12-16 21:54:09'),
+(3, 1, 2, ':;,mlk,^p$^ùhgfgrdxgf', '2025-12-16 21:54:18', 0, NULL),
+(4, 4, 3, 'bonjour', '2025-12-16 21:58:12', 0, NULL);
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `messenger_messages`
 --
 
@@ -226,7 +252,9 @@ CREATE TABLE `notification` (
 
 INSERT INTO `notification` (`id`, `title`, `message`, `type`, `created_at`, `is_read`, `user_id`) VALUES
 (1, 'Bienvenue sur App-Review !', 'Bonjour Admin, bienvenue sur App-Review ! Nous sommes ravis de vous compter parmi nous. Commencez dès maintenant à explorer les commerces autour de vous, laisser vos avis et découvrir de nouveaux endroits.', 'success', '2025-12-16 02:41:21', 0, 1),
-(2, 'Conseils pour bien débuter', '💡 Astuce : Complétez votre profil pour recevoir des recommandations personnalisées. N\'hésitez pas à partager vos expériences en laissant des avis détaillés avec photos !', 'info', '2025-12-16 02:41:21', 0, 1);
+(2, 'Conseils pour bien débuter', '💡 Astuce : Complétez votre profil pour recevoir des recommandations personnalisées. N\'hésitez pas à partager vos expériences en laissant des avis détaillés avec photos !', 'info', '2025-12-16 02:41:21', 0, 1),
+(5, 'Nouveau propriétaire à valider', 'Un nouveau propriétaire s\'est inscrit : owner3 (owner3@example.com). Veuillez vérifier son CIN : B654321', 'warning', '2025-12-16 22:19:27', 0, 1),
+(6, 'Bienvenue sur App-Review !', 'Bonjour owner3, bienvenue sur App-Review ! Votre compte propriétaire est en attente de validation par notre équipe. Vous recevrez une notification une fois votre compte validé. En attendant, vous pouvez explorer la plateforme.', 'info', '2025-12-16 22:19:27', 0, 8);
 
 -- --------------------------------------------------------
 
@@ -292,6 +320,28 @@ CREATE TABLE `review_photo` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `subscription`
+--
+
+CREATE TABLE `subscription` (
+  `id` int(11) NOT NULL,
+  `subscriber_id` int(11) NOT NULL,
+  `provider_id` int(11) NOT NULL,
+  `subscribed_at` datetime NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `subscription`
+--
+
+INSERT INTO `subscription` (`id`, `subscriber_id`, `provider_id`, `subscribed_at`, `is_active`) VALUES
+(1, 4, 2, '2025-12-16 21:00:04', 1),
+(2, 4, 3, '2025-12-16 21:57:18', 1);
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `user`
 --
 
@@ -314,11 +364,12 @@ CREATE TABLE `user` (
 
 INSERT INTO `user` (`id`, `name`, `email`, `password`, `role`, `created_at`, `photo`, `cin`, `is_validated`, `is_active`) VALUES
 (1, 'Admin', 'admin@example.com', '$2y$13$eW8oQTz44Od56PQhtTaShOToR75PSY.Adtl9YQzeis6hnlmNXY3pW', 'ADMIN', '2025-12-16 02:41:21', 'p3-6940bbb5af9d1.jpg', NULL, 1, 1),
-(2, 'Service Owner 1', 'owner1@example.com', '$2y$13$dp5wp.OfEk32GK8uiW4dcO013s35sABqhVoDu6CLjP1N0UyuSbIEW', 'SERVICE_OWNER', '2025-12-16 02:47:48', 'profil1-6940bbcc68699.jpg', 'B654321', 1, 1),
-(3, 'Service Owner 2', 'owner2@example.com', '$2y$13$K0OBipBCSYZrOehosA4DlOuqi2.oGgMW970aa7znscpiJJ6VfxgkK', 'SERVICE_OWNER', '2025-12-16 02:47:48', 'p1-6940bb586b858.jpg', 'C789012', 1, 1),
-(4, 'Customer 1', 'customer1@example.com', '$2y$13$49WpAdeLShJxeaydPbyeMuFCCSVdJ6pMS8ssU25/Ju1cZQPXJ0y0G', 'CUSTOMER', '2025-12-16 02:47:48', 'p2-6940bb841a1be.jpg', NULL, 1, 1),
-(5, 'Customer 2', 'customer2@example.com', '$2y$13$baFF95WAU9V9jFLLaIvkzevMO2JmisylmQTncRvq/ekBKijHT3uQe', 'CUSTOMER', '2025-12-16 02:47:48', 'profil2-6940bb9184846.webp', NULL, 1, 1),
-(6, 'Customer 3', 'customer3@example.com', '$2y$13$YkA/fDIoCuKsAAFGnuRYX.eJRaAd1BtBqVvo1RhtanVpDu8AaDVva', 'CUSTOMER', '2025-12-16 02:47:48', 'profil3-6940bba0ad723.jpg', NULL, 1, 1);
+(2, 'Service Owner 1', 'owner1@example.com', '$2y$13$dp5wp.OfEk32GK8uiW4dcO013s35sABqhVoDu6CLjP1N0UyuSbIEW', 'SERVICE_OWNER', '2025-12-06 02:47:48', 'profil1-6940bbcc68699.jpg', 'B654321', 1, 1),
+(3, 'Service Owner 2', 'owner2@example.com', '$2y$13$K0OBipBCSYZrOehosA4DlOuqi2.oGgMW970aa7znscpiJJ6VfxgkK', 'SERVICE_OWNER', '2025-10-16 02:47:48', 'p1-6940bb586b858.jpg', 'C789012', 1, 1),
+(4, 'Customer 1', 'customer1@example.com', '$2y$13$49WpAdeLShJxeaydPbyeMuFCCSVdJ6pMS8ssU25/Ju1cZQPXJ0y0G', 'CUSTOMER', '2025-08-16 02:47:48', 'p2-6940bb841a1be.jpg', NULL, 1, 1),
+(5, 'Customer 2', 'customer2@example.com', '$2y$13$baFF95WAU9V9jFLLaIvkzevMO2JmisylmQTncRvq/ekBKijHT3uQe', 'CUSTOMER', '2025-08-16 02:47:48', 'profil2-6940bb9184846.webp', NULL, 1, 1),
+(6, 'Customer 3', 'customer3@example.com', '$2y$13$YkA/fDIoCuKsAAFGnuRYX.eJRaAd1BtBqVvo1RhtanVpDu8AaDVva', 'CUSTOMER', '2025-05-16 02:47:48', 'profil3-6940bba0ad723.jpg', NULL, 1, 1),
+(8, 'owner3', 'owner3@example.com', '$2y$13$Cry0mwsw.TlGIU7YOlkrVuIJT5B/rw3o8w/xctGAifxHmXfzEA1nu', 'SERVICE_OWNER', '2025-12-16 22:19:27', '6941ccdf55690.jpg', 'B654321', 0, 1);
 
 --
 -- Index pour les tables déchargées
@@ -368,6 +419,14 @@ ALTER TABLE `like_review`
   ADD KEY `IDX_479A92343E2E969B` (`review_id`);
 
 --
+-- Index pour la table `message`
+--
+ALTER TABLE `message`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_receiver_read` (`receiver_id`,`is_read`),
+  ADD KEY `idx_conversation` (`sender_id`,`receiver_id`,`sent_at`);
+
+--
 -- Index pour la table `messenger_messages`
 --
 ALTER TABLE `messenger_messages`
@@ -406,6 +465,14 @@ ALTER TABLE `review_photo`
   ADD PRIMARY KEY (`id`),
   ADD KEY `IDX_739A8033E2E969B` (`review_id`),
   ADD KEY `IDX_739A803A76ED395` (`user_id`);
+
+--
+-- Index pour la table `subscription`
+--
+ALTER TABLE `subscription`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_subscription` (`subscriber_id`,`provider_id`),
+  ADD KEY `provider_id` (`provider_id`);
 
 --
 -- Index pour la table `user`
@@ -449,6 +516,12 @@ ALTER TABLE `like_review`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
+-- AUTO_INCREMENT pour la table `message`
+--
+ALTER TABLE `message`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT pour la table `messenger_messages`
 --
 ALTER TABLE `messenger_messages`
@@ -458,7 +531,7 @@ ALTER TABLE `messenger_messages`
 -- AUTO_INCREMENT pour la table `notification`
 --
 ALTER TABLE `notification`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `report_review`
@@ -479,10 +552,16 @@ ALTER TABLE `review_photo`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pour la table `subscription`
+--
+ALTER TABLE `subscription`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT pour la table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Contraintes pour les tables déchargées
@@ -516,6 +595,13 @@ ALTER TABLE `like_review`
   ADD CONSTRAINT `FK_479A9234A76ED395` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
 
 --
+-- Contraintes pour la table `message`
+--
+ALTER TABLE `message`
+  ADD CONSTRAINT `message_ibfk_1` FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `message_ibfk_2` FOREIGN KEY (`receiver_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
+
+--
 -- Contraintes pour la table `notification`
 --
 ALTER TABLE `notification`
@@ -541,6 +627,13 @@ ALTER TABLE `review`
 ALTER TABLE `review_photo`
   ADD CONSTRAINT `FK_739A8033E2E969B` FOREIGN KEY (`review_id`) REFERENCES `review` (`id`),
   ADD CONSTRAINT `FK_739A803A76ED395` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+
+--
+-- Contraintes pour la table `subscription`
+--
+ALTER TABLE `subscription`
+  ADD CONSTRAINT `subscription_ibfk_1` FOREIGN KEY (`subscriber_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `subscription_ibfk_2` FOREIGN KEY (`provider_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

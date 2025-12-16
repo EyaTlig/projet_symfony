@@ -21,31 +21,45 @@ security:
     main:
       lazy: true
       provider: app_user_provider
+      user_checker: App\Security\UserChecker
+
       form_login:
         login_path: app_login
         check_path: app_login
-        default_target_path: app_login # Ajoutez cette ligne
+        default_target_path: client_home
+        always_use_default_target_path: true
 
-        enable_csrf: true
       logout:
         path: app_logout
         target: app_login
-
-  # accès aux routes - CORRIGÉ
+    # accès aux routes
   access_control:
-    # login accessible par tous
+    # Pages publiques
     - { path: ^/login$, roles: PUBLIC_ACCESS }
     - { path: ^/logout$, roles: PUBLIC_ACCESS }
     - { path: ^/register, roles: PUBLIC_ACCESS }
 
-    # pages admin
+    # Pages admin
     - { path: ^/user, roles: ROLE_ADMIN }
     - { path: ^/category, roles: ROLE_ADMIN }
     - { path: ^/business/photo, roles: ROLE_ADMIN }
     - { path: ^/review/photo, roles: ROLE_ADMIN }
     - { path: ^/admin/dashboard, roles: ROLE_ADMIN }
-    - { path: ^/notifications, roles: PUBLIC_ACCESS }
 
+    # Notifications accessibles à tous les connectés
+    - { path: ^/notifications, roles: IS_AUTHENTICATED_FULLY }
+
+    # Messages - accessibles à tous les utilisateurs connectés
+    - { path: ^/messages, roles: IS_AUTHENTICATED_FULLY }
+
+    # Subscriptions - accessibles à tous les utilisateurs connectés
+    - { path: ^/subscription, roles: IS_AUTHENTICATED_FULLY }
+
+    # Pages owner
+    - { path: ^/owner/businesses, roles: ROLE_SERVICE_OWNER }
 
     # Toutes les autres routes nécessitent une authentification
     - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
+
+    - { path: ^/notifications/unread-count, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

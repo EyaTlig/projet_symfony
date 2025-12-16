@@ -36,6 +36,14 @@
             </div>
         </div>
 
+        {% if app.user and app.user.role == 'CUSTOMER' %}
+            <button class="btn btn-outline-primary rounded-pill px-4 d-flex align-items-center gap-2 subscription-toggle-btn"
+                    data-owner-id="{{ owner.id }}"
+                    id="subscriptionBtn{{ owner.id }}">
+                <i class="bi bi-bell" id="subscriptionIcon{{ owner.id }}"></i>
+                <span id="subscriptionText{{ owner.id }}">S'abonner</span>
+            </button>
+        {% endif %}
         <!-- Statistiques -->
         {% if businesses|length > 0 %}
             <div class="row g-3 mb-5">
@@ -934,5 +942,90 @@
                 }
             });
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier l'état de l'abonnement au chargement
+            const subscriptionBtn = document.querySelector('.subscription-toggle-btn');
+
+            if (subscriptionBtn) {
+                const ownerId = subscriptionBtn.dataset.ownerId;
+                checkSubscriptionStatus(ownerId);
+
+                // Gérer le clic
+                subscriptionBtn.addEventListener('click', function() {
+                    toggleSubscription(ownerId);
+                });
+            }
+        });
+
+        async function checkSubscriptionStatus(ownerId) {
+            try {
+                const response = await fetch(`/subscription/status/${ownerId}`);
+                const data = await response.json();
+
+                updateSubscriptionButton(ownerId, data.isSubscribed);
+            } catch (error) {
+                console.error('Erreur lors de la vérification de l\'abonnement:', error);
+            }
+        }
+
+        async function toggleSubscription(ownerId) {
+            const btn = document.getElementById(`subscriptionBtn${ownerId}`);
+            const icon = document.getElementById(`subscriptionIcon${ownerId}`);
+            const text = document.getElementById(`subscriptionText${ownerId}`);
+
+            // Désactiver le bouton pendant la requête
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`/subscription/toggle/${ownerId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur réseau');
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'subscribed') {
+                    updateSubscriptionButton(ownerId, true);
+                    showToast('Vous êtes maintenant abonné !', 'success');
+                } else {
+                    updateSubscriptionButton(ownerId, false);
+                    showToast('Abonnement annulé', 'info');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showToast('Une erreur est survenue', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function updateSubscriptionButton(ownerId, isSubscribed) {
+            const btn = document.getElementById(`subscriptionBtn${ownerId}`);
+            const icon = document.getElementById(`subscriptionIcon${ownerId}`);
+            const text = document.getElementById(`subscriptionText${ownerId}`);
+
+            if (isSubscribed) {
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-primary');
+                icon.classList.remove('bi-bell');
+                icon.classList.add('bi-bell-fill');
+                text.textContent = 'Abonné';
+            } else {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-primary');
+                icon.classList.remove('bi-bell-fill');
+                icon.classList.add('bi-bell');
+                text.textContent = 'S\'abonner';
+            }
+        }
+
+
     </script>
 {% endblock %}

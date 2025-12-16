@@ -14,18 +14,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class NotificationController extends AbstractController
 {
-    #[Route('/notifications', name: 'notification_index')]
-    public function index(EntityManagerInterface $em): Response
-    {
-        $notifications = $em->getRepository(Notification::class)
-            ->findBy(['user' => $this->getUser()], ['createdAt' => 'DESC']);
 
-        return $this->render('notification/index.html.twig', [
-            'notifications' => $notifications,
-        ]);
-    }
 
-    // ✅ AJOUTEZ CETTE ROUTE (correspond à "notifications_list" dans base.html.twig)
     #[Route('/api/notifications', name: 'notifications_list')]
     public function listNotifications(EntityManagerInterface $em, SerializerInterface $serializer): JsonResponse
     {

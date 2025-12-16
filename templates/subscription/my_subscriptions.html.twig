@@ -1,0 +1,195 @@
+{% extends 'base_client.html.twig' %}
+
+{% block title %}Mes Abonnements{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 fw-bold mb-1">
+                    <i class="bi bi-bell-fill text-primary me-2"></i>Mes Abonnements
+                </h1>
+                <p class="text-muted mb-0">Gérez vos abonnements aux propriétaires</p>
+            </div>
+            <span class="badge bg-primary fs-5 px-4 py-2">
+            {{ subscriptions|length }} abonnement{{ subscriptions|length > 1 ? 's' : '' }}
+        </span>
+        </div>
+
+        {% if subscriptions|length > 0 %}
+            <div class="row g-4">
+                {% for subscription in subscriptions %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm h-100 subscription-card">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start mb-3">
+                                    <div class="avatar-lg me-3">
+                                        {% if subscription.provider.photo %}
+                                            <img src="{{ asset('uploads/' ~ subscription.provider.photo) }}"
+                                                 class="rounded-circle"
+                                                 width="60"
+                                                 height="60"
+                                                 alt="{{ subscription.provider.name }}">
+                                        {% else %}
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                                {{ subscription.provider.name|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title mb-1">{{ subscription.provider.name }}</h5>
+                                        <small class="text-muted">
+                                            <i class="bi bi-shop me-1"></i>Propriétaire de service
+                                        </small>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-link text-muted p-0"
+                                                data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="{{ path('owner_profile', {id: subscription.provider.id}) }}">
+                                                    <i class="bi bi-person me-2"></i>Voir le profil
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item"
+                                                   href="{{ path('messages_conversation', {id: subscription.provider.id}) }}">
+                                                    <i class="bi bi-chat-dots me-2"></i>Envoyer un message
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <button class="dropdown-item text-danger"
+                                                        onclick="toggleSubscription({{ subscription.provider.id }})">
+                                                    <i class="bi bi-bell-slash me-2"></i>Se désabonner
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-check me-1"></i>
+                                        Abonné depuis le {{ subscription.subscribedAt|date('d/m/Y') }}
+                                    </small>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <a href="{{ path('messages_conversation', {id: subscription.provider.id}) }}"
+                                       class="btn btn-primary btn-sm flex-grow-1">
+                                        <i class="bi bi-chat-dots me-1"></i>Message
+                                    </a>
+                                    <a href="{{ path('owner_profile', {id: subscription.provider.id}) }}"
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            {% if subscription.isActive %}
+                                <div class="card-footer bg-success bg-opacity-10 border-0 text-center py-2">
+                                    <small class="text-success fw-semibold">
+                                        <i class="bi bi-check-circle me-1"></i>Actif
+                                    </small>
+                                </div>
+                            {% else %}
+                                <div class="card-footer bg-secondary bg-opacity-10 border-0 text-center py-2">
+                                    <small class="text-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Inactif
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="empty-state">
+                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                            <i class="bi bi-bell-slash fs-1 text-muted"></i>
+                        </div>
+                        <h4 class="mb-2">Aucun abonnement</h4>
+                        <p class="text-muted mb-4">
+                            Abonnez-vous à des propriétaires pour rester informé de leurs actualités
+                            et pouvoir les contacter facilement.
+                        </p>
+                        <a href="{{ path('client_home') }}" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Découvrir des businesses
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .subscription-card {
+            transition: all 0.3s ease;
+        }
+
+        .subscription-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items-center;
+            justify-content-center;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .subscription-card {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+
+    <script>
+        async function toggleSubscription(providerId) {
+            if (!confirm('Êtes-vous sûr de vouloir vous désabonner ?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/subscription/toggle/${providerId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Erreur lors de la modification de l\'abonnement');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue');
+            }
+        }
+    </script>
+{% endblock %}
