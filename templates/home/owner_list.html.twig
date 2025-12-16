@@ -2,55 +2,469 @@
 
 {% block title %}Mes Businesses{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* Styles spécifiques pour la page Mes Businesses */
+        .page-title {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #3498db;
+            position: relative;
+        }
+
+        .page-title:after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            color: white;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .empty-state h3 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            opacity: 0.8;
+            max-width: 500px;
+            margin: 0 auto 2rem;
+        }
+
+        .btn-add-business {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-add-business:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        /* Carte Business */
+        .business-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid #eef2f7;
+        }
+
+        .business-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Carousel */
+        .carousel-img {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .carousel-control-prev,
+        .carousel-control-next {
+            background: rgba(0, 0, 0, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin: 0 10px;
+        }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            filter: invert(1);
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Card Body */
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .card-text {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Badges */
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-badge i {
+            margin-right: 0.25rem;
+        }
+
+        /* Boutons d'action */
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-modern {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+            color: white;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 117, 140, 0.3);
+            color: white;
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1.5rem;
+            border: none;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #eef2f7;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Photo preview */
+        #filePreviews {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .photo-preview {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-photo {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .remove-photo:hover {
+            transform: scale(1.1);
+            background: #ff2e43;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 1.75rem;
+            }
+
+            .empty-state {
+                padding: 3rem 1.5rem;
+            }
+
+            .empty-state i {
+                font-size: 3rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-modern {
+                width: 100%;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .business-card {
+            animation: fadeInUp 0.5s ease forwards;
+            animation-delay: calc(var(--i, 0) * 0.1s);
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
+    <div class="container py-5">
+        <!-- Header avec titre et bouton -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">📊 Mes Businesses</h1>
+                <p class="text-muted mb-0">Gérez tous vos établissements en un seul endroit</p>
+            </div>
+
+            <button class="btn btn-add-business" onclick="openAddModal()">
+                <i class="bi bi-plus-circle me-2"></i> Ajouter un business
+            </button>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-primary bg-gradient text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase opacity-75 mb-1">Total</h6>
+                                <h2 class="mb-0">{{ businesses|length }}</h2>
+                            </div>
+                            <i class="bi bi-shop-window fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
 
 
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-warning bg-gradient text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-uppercase opacity-75 mb-1">Photos</h6>
+                                <h2 class="mb-0">{{ businesses|reduce((total, b) => total + b.photos|length, 0) }}</h2>
+                            </div>
+                            <i class="bi bi-images fs-1 opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="container py-4">
-        <h2 class="page-title">Mes Businesses</h2>
-
+        <!-- Liste des Businesses -->
         {% if businesses is empty %}
-            <p class="text-muted">Vous n'avez aucun business pour le moment.</p>
+            <div class="empty-state">
+                <i class="bi bi-building-slash"></i>
+                <h3>Aucun business pour le moment</h3>
+                <p>Commencez par ajouter votre premier établissement pour le faire découvrir à la communauté.</p>
+                <button class="btn btn-add-business" onclick="openAddModal()">
+                    <i class="bi bi-plus-circle me-2"></i> Créer mon premier business
+                </button>
+            </div>
         {% else %}
             <div class="row g-4">
                 {% for business in businesses %}
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="business-card">
-
+                        <div class="business-card" style="--i: {{ loop.index0 }}">
+                            <!-- Carousel Photos -->
                             {% if business.photos|length > 0 %}
-                                <div id="carouselBusiness{{ business.id }}" class="carousel slide">
+                                <div id="carouselBusiness{{ business.id }}" class="carousel slide" data-bs-ride="carousel">
                                     <div class="carousel-inner">
-                                        {% for photo in business.photos %}
+                                        {% for photo in business.photos|slice(0, 5) %}
                                             <div class="carousel-item {% if loop.first %}active{% endif %}">
                                                 <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
-                                                     class="d-block w-100 carousel-img">
+                                                     class="d-block w-100 carousel-img"
+                                                     alt="{{ business.name }}">
                                             </div>
                                         {% endfor %}
                                     </div>
 
                                     {% if business.photos|length > 1 %}
-                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide="prev">
+                                        <button class="carousel-control-prev" type="button"
+                                                data-bs-target="#carouselBusiness{{ business.id }}"
+                                                data-bs-slide="prev">
                                             <span class="carousel-control-prev-icon"></span>
                                         </button>
-                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide="next">
+                                        <button class="carousel-control-next" type="button"
+                                                data-bs-target="#carouselBusiness{{ business.id }}"
+                                                data-bs-slide="next">
                                             <span class="carousel-control-next-icon"></span>
                                         </button>
+
+                                        <!-- Indicateurs -->
+                                        <div class="carousel-indicators position-absolute" style="bottom: 10px;">
+                                            {% for photo in business.photos|slice(0, 5) %}
+                                                <button type="button"
+                                                        data-bs-target="#carouselBusiness{{ business.id }}"
+                                                        data-bs-slide-to="{{ loop.index0 }}"
+                                                        class="{% if loop.first %}active{% endif %}"
+                                                        style="width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; background: transparent; margin: 0 2px;">
+                                                </button>
+                                            {% endfor %}
+                                        </div>
                                     {% endif %}
                                 </div>
                             {% else %}
-                                <img src="{{ asset('images/default-business.png') }}" class="card-img-top">
+                                <div class="position-relative">
+                                    <img src="{{ asset('images/default-business.png') }}"
+                                         class="card-img-top"
+                                         alt="{{ business.name }}"
+                                         style="height: 200px; object-fit: cover;">
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-25">
+                                        <i class="bi bi-camera text-white fs-1"></i>
+                                    </div>
+                                </div>
                             {% endif %}
 
-                            <div class="card-body px-3">
-                                <h5 class="card-title">{{ business.name }}</h5>
+                            <!-- Card Body -->
+                            <div class="card-body">
+
+
+                                {% if business.category %}
+                                    <span class="badge bg-info mb-3">{{ business.category.name }}</span>
+                                {% endif %}
 
                                 <p class="card-text">
-                                    {{ business.description|default('Pas de description') }}
+                                    {{ business.description|default('Aucune description fournie') }}
                                 </p>
 
-                                <div class="d-flex justify-content-between mt-3">
-                                    <button class="btn btn-warning btn-modern"
+                                <!-- Informations rapides -->
+                                <div class="mb-3">
+                                    {% if business.address %}
+                                        <div class="info-badge">
+                                            <i class="bi bi-geo-alt"></i>
+                                            <span>{{ business.address }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if business.phone %}
+                                        <div class="info-badge">
+                                            <i class="bi bi-telephone"></i>
+                                            <span>{{ business.phone }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="info-badge">
+                                        <i class="bi bi-image"></i>
+                                        <span>{{ business.photos|length }} photo(s)</span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="action-buttons">
+                                    <button class="btn btn-modern btn-edit"
                                             onclick="openEditModal(
                                             {{ business.id }},
                                                     '{{ business.name|e('js') }}',
@@ -61,18 +475,19 @@
                                             {{ business.category ? business.category.id : 'null' }},
                                                     '{{ business.description|e('js') }}'
                                                     )">
-                                        Modifier
+                                        <i class="bi bi-pencil-square me-1"></i> Modifier
                                     </button>
 
                                     <form action="{{ path('business_delete', {'id': business.id}) }}"
                                           method="POST"
-                                          onsubmit="return confirm('Confirmer la suppression ?');">
-                                        <button type="submit" class="btn btn-danger btn-modern">Supprimer</button>
+                                          class="w-100"
+                                          onsubmit="return confirmDelete()">
+                                        <button type="submit" class="btn btn-modern btn-delete w-100">
+                                            <i class="bi bi-trash me-1"></i> Supprimer
+                                        </button>
                                     </form>
-
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 {% endfor %}
@@ -80,123 +495,163 @@
         {% endif %}
     </div>
 
-
-
-    <!-- ---------- MODAL AJOUT / MODIF ---------- -->
+    <!-- Modal -->
     <div class="modal fade" id="businessModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-
                 <form id="businessForm" method="POST" enctype="multipart/form-data">
-
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalTitle">Ajouter Business</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <h5 class="modal-title" id="modalTitle">Ajouter un Business</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nom de l'établissement *</label>
+                                    <input type="text" id="name" name="name" class="form-control" required
+                                           placeholder="Ex: Le Gourmet Parisien">
+                                </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Nom</label>
-                            <input type="text" id="name" name="name" class="form-control" required>
+                                <div class="mb-3">
+                                    <label class="form-label">Adresse *</label>
+                                    <input type="text" id="address" name="address" class="form-control" required
+                                           placeholder="Ex: 123 Avenue des Champs-Élysées, Paris">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Téléphone *</label>
+                                    <input type="tel" id="phone" name="phone" class="form-control" required
+                                           placeholder="Ex: +33 1 23 45 67 89">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Site Web</label>
+                                    <input type="url" id="website" name="website" class="form-control"
+                                           placeholder="Ex: https://www.monbusiness.com">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Catégorie *</label>
+                                    <select id="category" name="category" class="form-select" required>
+                                        <option value="">-- Choisir une catégorie --</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Description *</label>
+                                    <textarea id="description" name="description" class="form-control"
+                                              rows="5" required
+                                              placeholder="Décrivez votre établissement..."></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Photos (max 5)</label>
+                                    <div class="input-group">
+                                        <input type="file" id="photosInput" name="photos[]"
+                                               class="form-control" multiple accept="image/*">
+                                        <button type="button" class="btn btn-outline-primary"
+                                                onclick="document.getElementById('photosInput').click()">
+                                            <i class="bi bi-folder-plus"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Formats acceptés: JPG, PNG, WEBP. Max 2Mo par image.</small>
+
+                                    <div id="filePreviews" class="mt-3"></div>
+                                    <div id="photoCount" class="text-muted mt-2"></div>
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Adresse</label>
-                            <input type="text" id="address" name="address" class="form-control" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Téléphone</label>
-                            <input type="text" id="phone" name="phone" class="form-control" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Site Web</label>
-                            <input type="text" id="website" name="website" class="form-control">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Catégorie</label>
-                            <select id="category" name="category" class="form-select" required>
-                                <option value="">-- Choisir une catégorie --</option>
-                                {% for category in categories %}
-                                    <option value="{{ category.id }}">{{ category.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea id="description" name="description" class="form-control" required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Photos (max 5)</label>
-                            <input type="file" id="photosInput" name="photos[]" class="form-control" multiple accept="image/*">
-                            <div id="filePreviews" class="mt-2 d-flex gap-2 flex-wrap"></div>
-                            <div id="photoCount" class="fw-semibold mt-1"></div>
-                        </div>
-
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-success btn-modern" id="submitButton">Enregistrer</button>
-                        <button class="btn btn-secondary btn-modern" data-bs-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitButton">
+                            <i class="bi bi-check-circle me-1"></i> Enregistrer
+                        </button>
                     </div>
-
                 </form>
-
             </div>
         </div>
     </div>
-
-
 {% endblock %}
-
-
 
 {% block javascripts %}
     <script>
-        /* ------------------------- MODIFIER BUSINESS ------------------------- */
-        function openEditModal(id, name, address, phone, website, ownerId, categoryId, description) {
-            document.getElementById('modalTitle').textContent = 'Modifier Business';
-            document.getElementById('businessForm').action = '/business/owner/edit/' + id;
-
-            document.getElementById('name').value = name;
-            document.getElementById('address').value = address;
-            document.getElementById('phone').value = phone;
-            document.getElementById('website').value = website;
-            document.getElementById('category').value = categoryId;
-            document.getElementById('description').value = description;
+        /* ------------------------- OUVERTURE MODAL AJOUT ------------------------- */
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Ajouter un Business';
+            document.getElementById('businessForm').action = '{{ path("business_add") }}';
+            document.getElementById('businessForm').reset();
+            document.getElementById('filePreviews').innerHTML = '';
+            document.getElementById('photoCount').textContent = '';
 
             new bootstrap.Modal(document.getElementById('businessModal')).show();
         }
 
-        /* ------------------------ PREVIEW PHOTOS ------------------------ */
+        /* ------------------------- OUVERTURE MODAL MODIFICATION ------------------------- */
+        function openEditModal(id, name, address, phone, website, ownerId, categoryId, description) {
+            document.getElementById('modalTitle').textContent = 'Modifier le Business';
+            document.getElementById('businessForm').action = '/business/owner/edit/' + id;
+
+            document.getElementById('name').value = name || '';
+            document.getElementById('address').value = address || '';
+            document.getElementById('phone').value = phone || '';
+            document.getElementById('website').value = website || '';
+            document.getElementById('category').value = categoryId || '';
+            document.getElementById('description').value = description || '';
+
+            document.getElementById('filePreviews').innerHTML = '';
+            document.getElementById('photoCount').textContent = '';
+
+            new bootstrap.Modal(document.getElementById('businessModal')).show();
+        }
+
+        /* ------------------------- GESTION PHOTOS ------------------------- */
         function handlePhotoUpload(input) {
             const container = document.getElementById('filePreviews');
             const counter = document.getElementById('photoCount');
 
             container.innerHTML = '';
-            counter.textContent = '';
 
             const files = Array.from(input.files).slice(0, 5);
 
-            files.forEach((file) => {
-                if (!file.type.startsWith('image/')) return;
+            if (files.length === 0) {
+                counter.textContent = 'Aucune photo sélectionnée';
+                return;
+            }
+
+            files.forEach((file, index) => {
+                if (!file.type.startsWith('image/')) {
+                    alert('Veuillez sélectionner uniquement des images');
+                    return;
+                }
+
+                if (file.size > 2 * 1024 * 1024) {
+                    alert(`L'image "${file.name}" dépasse 2Mo`);
+                    return;
+                }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const div = document.createElement('div');
                     div.className = 'photo-preview';
                     div.innerHTML = `
-                <img src="${e.target.result}">
-                <button type="button" class="remove-photo" onclick="removePhoto(this)">&times;</button>
-            `;
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <button type="button" class="remove-photo" onclick="removePhoto(this)" title="Supprimer">
+                            &times;
+                        </button>
+                    `;
                     container.appendChild(div);
                 };
-
                 reader.readAsDataURL(file);
             });
 
@@ -207,12 +662,76 @@
             handlePhotoUpload(this);
         });
 
-        /* ------------------------ REMOVE PHOTO ------------------------ */
+        /* ------------------------- SUPPRESSION PHOTO ------------------------- */
         function removePhoto(btn) {
             btn.closest('.photo-preview').remove();
             const remaining = document.querySelectorAll('#filePreviews .photo-preview').length;
             document.getElementById('photoCount').textContent =
-                remaining ? `${remaining} image(s) sélectionnée(s)` : '';
+                remaining ? `${remaining} image(s) sélectionnée(s)` : 'Aucune photo sélectionnée';
         }
+
+        /* ------------------------- CONFIRMATION SUPPRESSION ------------------------- */
+        function confirmDelete() {
+            return Swal.fire({
+                title: 'Êtes-vous sûr ?',
+                text: "Cette action est irréversible !",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff4757',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Oui, supprimer !',
+                cancelButtonText: 'Annuler',
+                reverseButtons: true,
+                customClass: {
+                    confirmButton: 'btn btn-danger',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then((result) => {
+                return result.isConfirmed;
+            });
+        }
+
+        /* ------------------------- VALIDATION FORMULAIRE ------------------------- */
+        document.getElementById('businessForm')?.addEventListener('submit', function(e) {
+            const name = document.getElementById('name').value.trim();
+            const category = document.getElementById('category').value;
+
+            if (!name || !category) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Champs obligatoires',
+                    text: 'Veuillez remplir tous les champs obligatoires (*)',
+                    icon: 'error',
+                    confirmButtonColor: '#667eea'
+                });
+                return false;
+            }
+
+            return true;
+        });
+
+        /* ------------------------- INITIALISATION ------------------------- */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ajout d'un effet de hover sur les cartes
+            const cards = document.querySelectorAll('.business-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.zIndex = 10;
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.zIndex = 1;
+                });
+            });
+
+            // Initialiser les carousels
+            const carousels = document.querySelectorAll('.carousel');
+            carousels.forEach(carousel => {
+                new bootstrap.Carousel(carousel, {
+                    interval: 5000,
+                    wrap: true
+                });
+            });
+        });
     </script>
 {% endblock %}
