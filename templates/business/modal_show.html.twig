@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ business.name }} - Détails</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <!-- Style personnalisé -->
+    <style>
+        /* Star Rating */
+        .star-rating {
+            direction: rtl;
+            display: inline-flex;
+            font-size: 1.8rem;
+            cursor: pointer;
+            justify-content: center;
+        }
+        .star-rating input {
+            display: none;
+        }
+        .star-rating label {
+            color: #ddd;
+            transition: color 0.2s ease;
+            margin: 0 2px;
+        }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #ffc107;
+        }
+
+        /* Reviews Scroll */
+        .reviews-scroll-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .reviews-scroll-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .reviews-scroll-container::-webkit-scrollbar-thumb {
+            background: #dee2e6;
+            border-radius: 2px;
+        }
+        .reviews-scroll-container::-webkit-scrollbar-track {
+            background: #f8f9fa;
+        }
+
+        /* Prévisualisation photos */
+        .photo-preview {
+            position: relative;
+            display: inline-block;
+            margin: 0 5px 5px 0;
+        }
+        .photo-preview img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+        .remove-photo {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .remove-photo:hover {
+            background: #c82333;
+        }
+
+        /* Bouton favori */
+        .favorite-toggle-btn {
+            transition: transform 0.2s ease;
+        }
+        .favorite-toggle-btn:hover {
+            transform: scale(1.1);
+        }
+        .favorite-toggle-btn:active {
+            transform: scale(0.95);
+        }
+        .favorite-toggle-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Image hover effect */
+        .img-hover-zoom {
+            overflow: hidden;
+        }
+        .img-hover-zoom img {
+            transition: transform 0.3s ease;
+        }
+        .img-hover-zoom:hover img {
+            transform: scale(1.05);
+        }
+
+        /* Review photo modal */
+        .review-photo-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .review-photo-modal.active {
+            display: flex;
+        }
+        .review-photo-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .review-photo-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .star-rating { font-size: 1.5rem; }
+            .carousel-control-prev,
+            .carousel-control-next {
+                width: 40px;
+                height: 40px;
+            }
+            .favorite-toggle-btn i { font-size: 1.4rem; }
+            .modal-body { padding: 1rem !important; }
+            .reviews-scroll-container {
+                max-height: 200px;
+            }
+        }
+
+        /* Rating badge */
+        .rating-badge {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: white;
+            font-weight: bold;
+            border-radius: 20px;
+            padding: 0.25rem 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Form focus styles */
+        .form-control:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        }
+
+        /* Custom button */
+        .btn-submit {
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        /* Card hover effect */
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+        }
+
+        /* Min height for image container */
+        .min-h-300 {
+            min-height: 300px;
+        }
+    </style>
+</head>
+<body>
+<!-- Modal pour afficher les photos en grand -->
+<div id="reviewPhotoModal" class="review-photo-modal">
+    <span class="review-photo-modal-close">&times;</span>
+    <img id="reviewPhotoModalImage" src="" alt="Photo d'avis en grand">
+</div>
+
+<div class="modal-body p-4" id="businessDetails{{ business.id }}">
+    <div class="row g-4">
+        <!-- PHOTOS -->
+        <div class="col-lg-7 col-md-12">
+            <div class="card shadow-sm rounded-3 overflow-hidden card-hover">
+                {% if business.photos|length > 0 %}
+                    <div id="carouselPhotos{{ business.id }}" class="carousel slide h-100" data-bs-ride="carousel" aria-label="Photos de {{ business.name }}">
+                        <!-- Indicateurs -->
+                        {% if business.photos|length > 1 %}
+                            <div class="carousel-indicators">
+                                {% for photo in business.photos %}
+                                    <button type="button"
+                                            data-bs-target="#carouselPhotos{{ business.id }}"
+                                            data-bs-slide-to="{{ loop.index0 }}"
+                                            {% if loop.first %}class="active" aria-current="true"{% endif %}
+                                            aria-label="Slide {{ loop.index }}"></button>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Slides -->
+                        <div class="carousel-inner h-100 img-hover-zoom">
+                            {% for photo in business.photos %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %} h-100"
+                                     aria-label="Photo {{ loop.index }} sur {{ business.photos|length }}">
+                                    <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
+                                         class="d-block w-100 h-100 object-fit-cover"
+                                         alt="Photo {{ loop.index }} de {{ business.name }}"
+                                         loading="lazy"
+                                         onerror="this.onerror=null; this.src='{{ asset('images/default-business.png') }}';">
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Contrôles -->
+                        {% if business.photos|length > 1 %}
+                            <button class="carousel-control-prev" type="button"
+                                    data-bs-target="#carouselPhotos{{ business.id }}"
+                                    data-bs-slide="prev"
+                                    aria-label="Photo précédente">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button"
+                                    data-bs-target="#carouselPhotos{{ business.id }}"
+                                    data-bs-slide="next"
+                                    aria-label="Photo suivante">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            </button>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light h-100 min-h-300">
+                        <div class="text-center p-4">
+                            <img src="{{ asset('images/default-business.png') }}"
+                                 class="img-fluid w-100 h-100 object-fit-cover"
+                                 alt="Aucune photo disponible pour {{ business.name }}"
+                                 onerror="this.onerror=null; this.src='{{ asset('images/default-business.png') }}';">
+                            <p class="small text-muted mt-2">Aucune photo disponible</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Informations complémentaires -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card shadow-sm rounded-3 h-100">
+                        <div class="card-body">
+                            <h6 class="card-title fw-semibold">
+                                <i class="bi bi-geo-alt-fill text-primary me-2"></i>Adresse
+                            </h6>
+                            <p class="card-text mb-0 small">
+                                {{ business.address|default('Non renseignée') }}<br>
+                                {{ business.postalCode|default('') }} {{ business.city|default('') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm rounded-3 h-100">
+                        <div class="card-body">
+                            <h6 class="card-title fw-semibold">
+                                <i class="bi bi-telephone-fill text-success me-2"></i>Contact
+                            </h6>
+                            <p class="card-text mb-0 small">
+                                {% if business.phone %}
+                                    <a href="tel:{{ business.phone }}" class="text-decoration-none">
+                                        {{ business.phone }}
+                                    </a><br>
+                                {% endif %}
+
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REVIEWS & FORM -->
+        <div class="col-lg-5 col-md-12">
+            <!-- HEADER BUSINESS -->
+            <div class="card shadow-sm rounded-3 mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h4 class="fw-bold text-dark mb-1">{{ business.name }}</h4>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rating-badge me-2">
+                                    <i class="bi bi-star-fill"></i>
+                                    {{ rating|default(0)|number_format(1) }}
+                                </div>
+                                <span class="text-muted small">({{ reviews|length }} avis)</span>
+                            </div>
+                        </div>
+                        {% if app.user %}
+                            <button type="button"
+                                    class="btn btn-link p-0 border-0 bg-transparent favorite-toggle-btn"
+                                    data-business-id="{{ business.id }}"
+                                    aria-label="{% if business.isFavorite(app.user) %}Retirer des favoris{% else %}Ajouter aux favoris{% endif %}"
+                                    id="favoriteBtn{{ business.id }}">
+                                <i class="bi
+                                        {% if business.isFavorite(app.user) %}
+                                            bi-heart-fill text-danger
+                                        {% else %}
+                                            bi-heart text-secondary
+                                        {% endif %}"
+                                   style="font-size: 1.7rem;"
+                                   id="favoriteIcon{{ business.id }}"></i>
+                                <span class="spinner-border spinner-border-sm d-none"
+                                      role="status"
+                                      id="favoriteSpinner{{ business.id }}">
+                                        <span class="visually-hidden">Chargement...</span>
+                                    </span>
+                            </button>
+                        {% else %}
+                            <button type="button"
+                                    class="btn btn-link p-0 border-0 bg-transparent"
+                                    data-bs-toggle="tooltip"
+                                    title="Connectez-vous pour ajouter aux favoris"
+                                    onclick="window.location.href='{{ path('app_login') }}'">
+                                <i class="bi bi-heart text-secondary" style="font-size: 1.7rem;"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+
+                    <p class="card-text text-muted mb-3">{{ business.description|default('Pas de description disponible pour cet établissement.')|nl2br }}</p>
+
+                    <!-- Affichage des étoiles -->
+                    <div class="mb-3" aria-label="Note moyenne : {{ rating|default(0) }} sur 5 étoiles">
+                        {% set fullStars = rating|default(0)|round(0, 'floor') %}
+                        {% set decimalPart = rating|default(0) - fullStars %}
+
+                        {% for i in 1..5 %}
+                            {% if i <= fullStars %}
+                                <span class="text-warning" aria-hidden="true">★</span>
+                            {% elseif i == fullStars + 1 and decimalPart >= 0.3 and decimalPart <= 0.7 %}
+                                <span class="text-warning position-relative">
+                                        <span class="text-warning" style="opacity: 0.3">★</span>
+                                        <span class="text-warning position-absolute start-0" style="clip-path: inset(0 50% 0 0)">★</span>
+                                    </span>
+                            {% else %}
+                                <span class="text-muted">★</span>
+                            {% endif %}
+                        {% endfor %}
+
+                        <span class="visually-hidden">Note: {{ rating|default(0) }}/5 sur {{ reviews|length }} avis</span>
+                        <small class="text-muted ms-2">{{ rating|default(0)|number_format(1) }}/5</small>
+                    </div>
+
+
+                </div>
+            </div>
+
+            <!-- REVIEWS -->
+            <div class="card shadow-sm rounded-3 mb-3">
+                <div class="card-header bg-light border-0 py-3">
+                    <h6 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-chat-square-text-fill text-primary me-2"></i>Avis
+                        <span class="badge bg-primary ms-2">{{ reviews|length }}</span>
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="reviews-scroll-container">
+                        {% for r in reviews %}
+                            <div class="border-bottom p-3 {% if loop.last %}border-bottom-0{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <strong class="text-dark">{{ r.user.name }}</strong>
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            {{ r.createdAt|date('d/m/Y') }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="mb-1">
+                                            {% for i in 1..5 %}
+                                                {% if i <= r.rating %}
+                                                    <span class="text-warning small">★</span>
+                                                {% else %}
+                                                    <span class="text-muted small">★</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <small class="text-muted">{{ r.rating }}/5</small>
+                                    </div>
+                                </div>
+                                <p class="m-0 text-muted small mb-2">{{ r.comment }}</p>
+
+                                <!-- Photos de l'avis -->
+                                {% if r.photos is defined and r.photos|length > 0 %}
+                                    <div class="mt-2">
+                                        {% for photo in r.photos|slice(0, 3) %}
+                                            <img src="{{ asset('uploads/review_photos/' ~ photo.url) }}"
+                                                 class="rounded img-thumbnail review-clickable me-1 mb-1"
+                                                 data-full="{{ asset('uploads/review_photos/' ~ photo.url) }}"
+                                                 alt="Photo d'avis de {{ r.user.name }}"
+                                                 style="width: 50px; height: 50px; object-fit: cover; cursor:pointer;"
+                                                 loading="lazy">
+                                        {% endfor %}
+                                        {% if r.photos|length > 3 %}
+                                            <span class="badge bg-secondary align-middle ms-1"
+                                                  data-bs-toggle="tooltip"
+                                                  title="Cliquez pour voir les {{ r.photos|length - 3 }} autres photos">
+                                                    +{{ r.photos|length - 3 }}
+                                                </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-star fs-1 mb-2 d-block"></i>
+                                <p class="mb-2">Aucun avis pour l'instant.</p>
+                                {% if app.user %}
+                                    <small class="text-muted">Soyez le premier à donner votre avis !</small>
+                                {% else %}
+                                    <small class="text-muted">
+                                        <a href="{{ path('app_login') }}" class="text-primary text-decoration-none">
+                                            Connectez-vous
+                                        </a> pour donner votre avis
+                                    </small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORMULAIRE AJOUT REVIEW -->
+            {% if app.user %}
+                <div class="card shadow-sm rounded-3">
+                    <div class="card-header bg-light border-0 py-3">
+                        <h6 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-pencil-square text-primary me-2"></i>Donner votre avis
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST"
+                              action="{{ path('review_add', {id: business.id}) }}"
+                              enctype="multipart/form-data"
+                              id="reviewForm{{ business.id }}"
+                              novalidate>
+
+                            <!-- NOTE EN ÉTOILES -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Votre note</label>
+                                <div class="star-rating text-center mx-auto" style="max-width: 150px;"
+                                     role="radiogroup" aria-label="Sélectionnez une note de 1 à 5 étoiles">
+                                    {% for i in 5..1 %}
+                                        <input type="radio"
+                                               id="rating-{{ i }}{{ business.id }}"
+                                               name="rating"
+                                               value="{{ i }}"
+                                               required
+                                               aria-label="{{ i }} étoiles" />
+                                        <label for="rating-{{ i }}{{ business.id }}"
+                                               title="{{ i }} étoile{{ i > 1 ? 's' : '' }}">★</label>
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted d-block text-center mt-1">Cliquez sur une étoile pour noter</small>
+                            </div>
+
+                            <!-- COMMENTAIRE -->
+                            <div class="mb-3 position-relative">
+                                <label for="comment{{ business.id }}" class="form-label fw-semibold">Commentaire</label>
+                                <textarea class="form-control pe-5"
+                                          id="comment{{ business.id }}"
+                                          name="comment"
+                                          rows="3"
+                                          placeholder="Partagez votre expérience (minimum 10 caractères)..."
+                                          required
+                                          minlength="10"
+                                          maxlength="1000"></textarea>
+                                <small class="text-muted float-end">
+                                    <span id="charCount{{ business.id }}">0</span>/1000
+                                </small>
+
+                                <label for="photosInput{{ business.id }}"
+                                       class="position-absolute bottom-0 end-0 translate-middle-y me-3 mb-3 text-primary"
+                                       style="cursor:pointer; z-index: 10;"
+                                       title="Ajouter des photos (max 5)">
+                                    <i class="bi bi-camera-fill fs-4"></i>
+                                </label>
+                                <input type="file"
+                                       id="photosInput{{ business.id }}"
+                                       name="photos[]"
+                                       multiple
+                                       accept="image/*"
+                                       class="d-none"
+                                       data-max-files="5"
+                                       data-max-size="5242880">
+                            </div>
+
+                            <!-- Prévisualisation des photos -->
+                            <div id="filePreviews{{ business.id }}" class="mb-3 d-none"></div>
+                            <div id="photoCount{{ business.id }}" class="text-muted d-block mb-3 small"></div>
+                            <small class="text-muted d-block mb-3">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Maximum 5 photos, 5MB par photo. Formats supportés: JPG, PNG, GIF
+                            </small>
+
+                            <button type="submit"
+                                    class="btn btn-primary w-100 py-2 fw-semibold btn-submit"
+                                    id="submitBtn{{ business.id }}">
+                                <i class="bi bi-send-fill me-1"></i>Envoyer mon avis
+                                <span class="spinner-border spinner-border-sm d-none ms-2"
+                                      role="status"
+                                      id="submitSpinner{{ business.id }}">
+                                        <span class="visually-hidden">Chargement...</span>
+                                    </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <a href="{{ path('app_login') }}" class="alert-link text-decoration-none">
+                        Connectez-vous
+                    </a> pour donner votre avis
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Scripts personnalisés -->
+<script>
+    // Initialisation des tooltips Bootstrap
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Gestion de la modale pour les photos d'avis
+        const reviewModal = document.getElementById('reviewPhotoModal');
+        const modalImage = document.getElementById('reviewPhotoModalImage');
+        const modalClose = document.querySelector('.review-photo-modal-close');
+
+        // Ouvrir la modale au clic sur une photo d'avis
+        document.querySelectorAll('.review-clickable').forEach(img => {
+            img.addEventListener('click', function() {
+                modalImage.src = this.getAttribute('data-full');
+                modalImage.alt = this.alt;
+                reviewModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        // Fermer la modale
+        modalClose.addEventListener('click', function() {
+            reviewModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+
+        // Fermer avec Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                reviewModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Fermer en cliquant à l'extérieur
+        reviewModal.addEventListener('click', function(e) {
+            if (e.target === reviewModal) {
+                reviewModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Gestion du compteur de caractères
+        {% if app.user %}
+        const textarea = document.getElementById('comment{{ business.id }}');
+        const charCount = document.getElementById('charCount{{ business.id }}');
+
+        if (textarea && charCount) {
+            textarea.addEventListener('input', function() {
+                const length = this.value.length;
+                charCount.textContent = length;
+
+                if (length > 1000) {
+                    charCount.style.color = '#dc3545';
+                } else if (length > 900) {
+                    charCount.style.color = '#fd7e14';
+                } else {
+                    charCount.style.color = '#6c757d';
+                }
+            });
+        }
+
+        // Gestion de la prévisualisation des photos
+        const photosInput = document.getElementById('photosInput{{ business.id }}');
+        const filePreviews = document.getElementById('filePreviews{{ business.id }}');
+        const photoCount = document.getElementById('photoCount{{ business.id }}');
+
+        if (photosInput && filePreviews && photoCount) {
+            photosInput.addEventListener('change', function(e) {
+                const files = Array.from(this.files);
+                const maxFiles = parseInt(this.getAttribute('data-max-files'));
+                const maxSize = parseInt(this.getAttribute('data-max-size'));
+
+                // Validation du nombre de fichiers
+                if (files.length > maxFiles) {
+                    alert(`Vous ne pouvez sélectionner que ${maxFiles} photos maximum.`);
+                    this.value = '';
+                    return;
+                }
+
+                // Validation de la taille des fichiers
+                const oversizedFiles = files.filter(file => file.size > maxSize);
+                if (oversizedFiles.length > 0) {
+                    alert('Certains fichiers sont trop volumineux (max 5MB par fichier).');
+                    this.value = '';
+                    return;
+                }
+
+                // Validation du type de fichier
+                const invalidFiles = files.filter(file => {
+                    return !file.type.match('image.*');
+                });
+                if (invalidFiles.length > 0) {
+                    alert('Veuillez sélectionner uniquement des images.');
+                    this.value = '';
+                    return;
+                }
+
+                // Affichage du compteur
+                photoCount.textContent = `${files.length} photo${files.length > 1 ? 's' : ''} sélectionnée${files.length > 1 ? 's' : ''}`;
+
+                // Création des prévisualisations
+                filePreviews.innerHTML = '';
+                filePreviews.classList.remove('d-none');
+
+                files.forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.createElement('div');
+                        preview.className = 'photo-preview';
+                        preview.innerHTML = `
+                                    <img src="${e.target.result}" alt="Prévisualisation ${index + 1}">
+                                    <button type="button" class="remove-photo" data-index="${index}">&times;</button>
+                                `;
+                        filePreviews.appendChild(preview);
+
+                        // Gestion de la suppression
+                        preview.querySelector('.remove-photo').addEventListener('click', function() {
+                            const indexToRemove = parseInt(this.getAttribute('data-index'));
+                            const dt = new DataTransfer();
+                            const updatedFiles = Array.from(photosInput.files).filter((_, i) => i !== indexToRemove);
+
+                            updatedFiles.forEach(file => dt.items.add(file));
+                            photosInput.files = dt.files;
+
+                            // Déclencher à nouveau l'événement change
+                            photosInput.dispatchEvent(new Event('change'));
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+        }
+
+        // Validation du formulaire
+        const reviewForm = document.getElementById('reviewForm{{ business.id }}');
+        if (reviewForm) {
+            reviewForm.addEventListener('submit', function(e) {
+                const rating = this.querySelector('input[name="rating"]:checked');
+                const comment = this.querySelector('textarea[name="comment"]');
+                const submitBtn = document.getElementById('submitBtn{{ business.id }}');
+                const submitSpinner = document.getElementById('submitSpinner{{ business.id }}');
+
+                // Désactiver le bouton et montrer le spinner
+                if (submitBtn && submitSpinner) {
+                    submitBtn.disabled = true;
+                    submitSpinner.classList.remove('d-none');
+                }
+
+                if (!rating) {
+                    e.preventDefault();
+                    alert('Veuillez sélectionner une note en cliquant sur les étoiles.');
+                    if (submitBtn && submitSpinner) {
+                        submitBtn.disabled = false;
+                        submitSpinner.classList.add('d-none');
+                    }
+                    return false;
+                }
+
+                if (!comment || comment.value.trim().length < 10) {
+                    e.preventDefault();
+                    alert('Le commentaire doit contenir au moins 10 caractères.');
+                    comment.focus();
+                    if (submitBtn && submitSpinner) {
+                        submitBtn.disabled = false;
+                        submitSpinner.classList.add('d-none');
+                    }
+                    return false;
+                }
+
+                // Limiter le nombre de photos
+                const photosInput = this.querySelector('input[name="photos[]"]');
+                if (photosInput && photosInput.files.length > 5) {
+                    e.preventDefault();
+                    alert('Vous ne pouvez télécharger que 5 photos maximum.');
+                    if (submitBtn && submitSpinner) {
+                        submitBtn.disabled = false;
+                        submitSpinner.classList.add('d-none');
+                    }
+                    return false;
+                }
+
+                return true;
+            });
+        }
+
+        // Gestion des favoris - VERSION SIMPLIFIÉE
+        const favoriteBtn = document.getElementById('favoriteBtn{{ business.id }}');
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', function() {
+                const businessId = this.getAttribute('data-business-id');
+                const favoriteIcon = document.getElementById('favoriteIcon{{ business.id }}');
+                const favoriteSpinner = document.getElementById('favoriteSpinner{{ business.id }}');
+
+                // Afficher le spinner
+                favoriteIcon.classList.add('d-none');
+                favoriteSpinner.classList.remove('d-none');
+                this.disabled = true;
+
+                // Solution alternative 1 : Redirection vers une page dédiée
+                // window.location.href = '/business/' + businessId + '/toggle-favorite';
+
+                // Solution alternative 2 : Formulaire POST
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/business/' + businessId + '/favorite';
+
+                // Ajouter un token CSRF si nécessaire
+                const csrfToken = document.createElement('input');
+                csrfToken.type = 'hidden';
+                csrfToken.name = '_token';
+                csrfToken.value = '{{ csrf_token('favorite') }}';
+                form.appendChild(csrfToken);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+        }
+        {% endif %}
+
+        // Gestion des étoiles dynamiques
+        document.querySelectorAll('.star-rating').forEach(ratingContainer => {
+            const stars = ratingContainer.querySelectorAll('input[type="radio"]');
+            const labels = ratingContainer.querySelectorAll('label');
+
+            // Initialiser les étoiles basées sur la sélection
+            function initializeStars() {
+                const checkedStar = ratingContainer.querySelector('input[type="radio"]:checked');
+                if (checkedStar) {
+                    const value = parseInt(checkedStar.value);
+                    for (let i = 5; i >= value; i--) {
+                        const label = ratingContainer.querySelector(`label[for="${ratingContainer.id.includes('{{ business.id }}') ? 'rating-' + i + '{{ business.id }}' : stars[i-1].id}"]`);
+                        if (label) label.style.color = '#ffc107';
+                    }
+                }
+            }
+
+            // Appeler l'initialisation
+            initializeStars();
+
+            stars.forEach(star => {
+                star.addEventListener('change', function() {
+                    // Retirer toutes les classes checked
+                    labels.forEach(label => {
+                        label.style.color = '#ddd';
+                    });
+
+                    // Colorer les étoiles jusqu'à celle sélectionnée
+                    const value = parseInt(this.value);
+                    for (let i = 5; i >= value; i--) {
+                        const label = ratingContainer.querySelector(`label[for="${this.id.replace('rating-' + value, 'rating-' + i)}"]`);
+                        if (label) label.style.color = '#ffc107';
+                    }
+                });
+            });
+
+            // Effet hover
+            labels.forEach(label => {
+                label.addEventListener('mouseenter', function() {
+                    const starId = this.getAttribute('for');
+                    const star = document.getElementById(starId);
+                    if (!star) return;
+
+                    const value = parseInt(star.value);
+
+                    // Colorer au survol
+                    for (let i = 5; i >= value; i--) {
+                        const hoverLabel = ratingContainer.querySelector(`label[for="${starId.replace('rating-' + value, 'rating-' + i)}"]`);
+                        if (hoverLabel) hoverLabel.style.color = '#ffc107';
+                    }
+                });
+
+                label.addEventListener('mouseleave', function() {
+                    // Rétablir la couleur basée sur la sélection
+                    initializeStars();
+                });
+            });
+        });
+    });
+</script>
+</body>
+</html>

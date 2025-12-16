@@ -1,0 +1,617 @@
+{% extends 'base_client.html.twig' %}
+{% block title %}Accueil{% endblock %}
+
+{% block body %}
+
+    <style>
+        .hero-section {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)),
+            url('{{ asset("images/review.jpg") }}') center/cover no-repeat;
+            padding: 90px 20px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            color: #fff;
+            text-align: center;
+        }
+        .hero-section h1 {
+            font-weight: 700;
+            font-size: 2.8rem;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .category-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .category-scroll::-webkit-scrollbar {
+            height: 5px;
+        }
+        .category-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+        .category-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 5px;
+        }
+        .business-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        .business-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .carousel-img {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px 10px 0 0;
+        }
+        .filter-badge {
+            cursor: pointer;
+        }
+    </style>
+
+    <div class="container mt-4">
+
+        {# ===== HEADER ===== #}
+        <div class="hero-section">
+            <h1>Explorez les meilleurs services autour de vous</h1>
+            <p class="mt-2">Découvrez des entreprises proches, fiables et vérifiées.</p>
+        </div>
+
+    {# ===== BARRE DE FILTRES HORIZONTALE ===== #}
+    <div class="filter-bar mb-4">
+        <div class="d-flex flex-column gap-3">
+            {# Barre principale #}
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+
+
+                {# Boutons de filtres rapides #}
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tag me-1"></i>Catégorie
+                            {% if app.request.query.get('category') %}
+                                <span class="badge bg-primary ms-1">✓</span>
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?category=">Toutes</a></li>
+                            {% for category in categories %}
+                                <li>
+                                    <a class="dropdown-item {{ app.request.query.get('category') == category.id ? 'active' : '' }}"
+                                       href="?{{ app.request.query.all()|merge({'category': category.id})|url_encode }}">
+                                        {{ category.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-outline-warning dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-star me-1"></i>Note
+                            {% if app.request.query.get('min_rating') %}
+                                <span class="badge bg-warning ms-1">{{ app.request.query.get('min_rating') }}+</span>
+                            {% endif %}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?min_rating=">Toutes</a></li>
+                            {% for i in 1..5 %}
+                                <li>
+                                    <a class="dropdown-item {{ app.request.query.get('min_rating') == i ? 'active' : '' }}"
+                                       href="?{{ app.request.query.all()|merge({'min_rating': i})|url_encode }}">
+                                        {% for j in 1..i %}⭐{% endfor %} et plus
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-outline-success dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-sort-down me-1"></i>Trier
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {{ app.request.query.get('sort') == 'newest' ? 'active' : '' }}"
+                                   href="?{{ app.request.query.all()|merge({'sort': 'newest'})|url_encode }}">
+                                    Plus récents
+                                </a></li>
+                            <li><a class="dropdown-item {{ app.request.query.get('sort') == 'name_asc' ? 'active' : '' }}"
+                                   href="?{{ app.request.query.all()|merge({'sort': 'name_asc'})|url_encode }}">
+                                    Nom (A-Z)
+                                </a></li>
+                            <li><a class="dropdown-item {{ app.request.query.get('sort') == 'name_desc' ? 'active' : '' }}"
+                                   href="?{{ app.request.query.all()|merge({'sort': 'name_desc'})|url_encode }}">
+                                    Nom (Z-A)
+                                </a></li>
+                        </ul>
+                    </div>
+
+                    {# Bouton filtres avancés #}
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#advancedFilters" aria-expanded="false">
+                        <i class="bi bi-gear me-1"></i>Plus de filtres
+                    </button>
+                </div>
+            </div>
+
+            {# Filtres avancés (collapsible) #}
+            <div class="collapse" id="advancedFilters">
+                <div class="card card-body border-0 shadow-sm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="has_website"
+                                       id="hasWebsite" value="1"
+                                        {{ app.request.query.get('has_website') ? 'checked' : '' }}
+                                       onchange="this.form.submit()">
+                                <label class="form-check-label fw-medium" for="hasWebsite">
+                                    <i class="bi bi-globe me-1"></i>Avec site web
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            {# Filtres actifs #}
+            {% set activeFilters = [] %}
+
+            {% if app.request.query.get('category') %}
+                {% set categoryName = categories|filter(c => c.id == app.request.query.get('category'))|first.name %}
+                {% set activeFilters = activeFilters|merge([{
+                    'key': 'category',
+                    'label': 'Catégorie: ' ~ categoryName
+                }]) %}
+            {% endif %}
+            {% if app.request.query.get('min_rating') %}
+                {% set activeFilters = activeFilters|merge([{
+                    'key': 'min_rating',
+                    'label': 'Note min: ' ~ app.request.query.get('min_rating') ~ ' ⭐'
+                }]) %}
+            {% endif %}
+
+            {% if activeFilters|length > 0 %}
+                <div class="d-flex align-items-center flex-wrap gap-2 pt-2 border-top">
+                    <small class="text-muted me-2">Filtres actifs :</small>
+                    {% for filter in activeFilters %}
+                        <a href="{{ path('client_home', app.request.query.all()|filter((v, k) => k != filter.key)) }}"
+                           class="badge bg-light text-dark text-decoration-none d-flex align-items-center">
+                            {{ filter.label }}
+                            <i class="bi bi-x ms-1"></i>
+                        </a>
+                    {% endfor %}
+                    {% if activeFilters|length > 1 %}
+                        <a href="{{ path('client_home') }}"
+                           class="badge bg-danger text-white text-decoration-none">
+                            <i class="bi bi-x-circle me-1"></i>Tout effacer
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .filter-bar .btn {
+            border-radius: 20px;
+            padding: 0.375rem 1rem;
+        }
+        .filter-bar .dropdown-menu {
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .filter-bar .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+        }
+        .filter-bar .badge.bg-light:hover {
+            background-color: #e9ecef !important;
+        }
+    </style>
+        {# ===== HEADER ACTIONS ===== #}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-0">Businesses</h2>
+                <small class="text-muted">{{ businesses|length }} résultat(s) trouvé(s)</small>
+            </div>
+
+            <div>
+                {% if app.user %}
+
+                    {% if app.user.role == 'SERVICE_OWNER' %}
+                        <button class="btn btn-primary btn-add-business me-2" onclick="openAddModal()">
+                            <i class="bi bi-plus-circle me-1"></i> Ajouter mon Business
+                        </button>
+
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        {# ===== FAVORITES SECTION ===== #}
+        {% if app.user %}
+            <div class="mb-4">
+                <button id="toggleFavoritesBtn" class="btn btn-secondary">
+                    <i class="bi bi-heart-fill me-1"></i> Voir mes favoris
+                </button>
+            </div>
+        {% endif %}
+
+        {% if app.user %}
+            {% set favoriteBusinesses = businesses|filter(b => b.isFavorite(app.user)) %}
+            {% if favoriteBusinesses|length > 0 %}
+                <div id="favoritesSection" style="display:none;" class="mt-5">
+                    <h2 class="fw-bold mb-3">Mes Favoris</h2>
+                    <div class="row g-4">
+                        {% for business in favoriteBusinesses %}
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <div class="card business-card" data-id="{{ business.id }}" style="cursor:pointer;">
+                                    {% if business.photos|length > 0 %}
+                                        <div id="carouselFav{{ business.id }}" class="carousel slide" data-bs-ride="carousel">
+                                            <div class="carousel-inner">
+                                                {% for photo in business.photos %}
+                                                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                                        <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}" class="carousel-img w-100">
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% if business.photos|length > 1 %}
+                                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselFav{{ business.id }}" data-bs-slide="prev">
+                                                    <span class="carousel-control-prev-icon"></span>
+                                                </button>
+                                                <button class="carousel-control-next" type="button" data-bs-target="#carouselFav{{ business.id }}" data-bs-slide="next">
+                                                    <span class="carousel-control-next-icon"></span>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <img src="{{ asset('images/default-business.png') }}" class="carousel-img w-100">
+                                    {% endif %}
+
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h5 class="fw-bold mb-1">{{ business.name }}</h5>
+                                            {% if business.averageRating %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-star-fill"></i> {{ business.averageRating|number_format(1) }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        <p class="text-muted small mb-2">{{ business.description|default('Pas de description')|slice(0, 100) }}...</p>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-secondary">
+                                                <i class="bi bi-person"></i> {{ business.owner.name }}
+                                            </small>
+                                            <button type="button" class="btn btn-link p-0 border-0 bg-transparent favorite-toggle-btn" data-business-id="{{ business.id }}">
+                                                <i class="bi bi-heart-fill text-danger" style="font-size: 1.3rem;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {# ===== BUSINESS GRID ===== #}<div class="row g-4">
+    {% for business in businesses %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card business-card" data-id="{{ business.id }}" style="cursor:pointer;">
+                {% if business.photos|length > 0 %}
+                    <div id="carousel{{ business.id }}" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for photo in business.photos %}
+                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                    <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}" class="carousel-img w-100" alt="{{ business.name }}">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if business.photos|length > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ business.id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ business.id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <img src="{{ asset('images/default-business.png') }}" class="carousel-img w-100" alt="{{ business.name }}">
+                {% endif %}
+
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        {% if business.owner %}
+                            <a href="{{ path('owner_profile', {'id': business.owner.id}) }}" class="text-decoration-none text-dark">
+                                <h5 class="fw-bold mb-1">{{ business.name }}</h5>
+                            </a>
+                        {% else %}
+                            <h5 class="fw-bold mb-1">{{ business.name }}</h5>
+                        {% endif %}
+                        <div class="d-flex flex-column align-items-end">
+                            {% if business.averageRating %}
+                                <span class="badge bg-warning text-dark mb-1">
+                                    <i class="bi bi-star-fill"></i> {{ business.averageRating|number_format(1) }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mb-2">{{ business.description|default('Pas de description')|slice(0, 100) }}...</p>
+
+                    <div class="mb-2">
+                        {% if business.category %}
+                            <span class="badge bg-secondary">{{ business.category.name }}</span>
+                        {% endif %}
+                        {% if business.website %}
+                            <a href="{{ business.website }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                                <span class="badge bg-info">
+                                    <i class="bi bi-globe"></i> Site web
+                                </span>
+                            </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-secondary">
+                            <i class="bi bi-geo-alt"></i> {{ business.address|slice(0, 30) }}...
+                        </small>
+                        {% if app.user and business.owner and business.owner != app.user %}
+                            <button type="button" class="btn btn-link p-0 border-0 bg-transparent favorite-toggle-btn" data-business-id="{{ business.id }}">
+                                <i class="bi
+                                    {% if business.isFavorite(app.user) %}
+                                        bi-heart-fill text-danger
+                                    {% else %}
+                                        bi-heart text-secondary
+                                    {% endif %}"
+                                   style="font-size: 1.3rem;"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+
+                    {% if business.owner %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-person"></i> Propriétaire :
+                                <a href="{{ path('owner_profile', {'id': business.owner.id}) }}" class="text-decoration-none">
+                                    {{ business.owner.name }}
+                                </a>
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+
+    {# ========== MODAL DETAILS ========== #}
+    <div class="modal fade" id="businessModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content" id="modal-content-area"></div>
+        </div>
+    </div>
+
+    {# ========== MODAL AJOUT ========== #}
+    <div class="modal fade" id="businessModalajout" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="businessForm" method="POST" action="{{ path('business_add_owner') }}" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ajouter Business</h5>
+                        <button class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nom</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Adresse</label>
+                            <input type="text" class="form-control" name="address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" class="form-control" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Site Web</label>
+                            <input type="text" class="form-control" name="website">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Catégorie</label>
+                            <select name="category" class="form-select" required>
+                                <option value="">-- Choisir une catégorie --</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Photos (max 5)</label>
+                            <input type="file" id="photosInput" name="photos[]" class="form-control" multiple accept="image/*">
+                            <div id="filePreviews" class="mt-2 d-flex gap-2 flex-wrap"></div>
+                            <div id="photoCount" class="text-primary fw-medium mt-1"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-success">Enregistrer</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ***** JS inchangé + clean ***** */
+        document.querySelectorAll(".business-card").forEach(card => {
+            card.addEventListener("click", function (e) {
+                if (e.target.closest('.favorite-toggle-btn')) return;
+                fetch("/business/" + this.dataset.id)
+                    .then(r => r.text())
+                    .then(html => {
+                        document.getElementById("modal-content-area").innerHTML = html;
+                        new bootstrap.Modal(document.getElementById("businessModal")).show();
+                    });
+            });
+        });
+
+        function openAddModal() {
+            document.getElementById('businessForm').reset();
+            document.getElementById('filePreviews').innerHTML = '';
+            document.getElementById('photoCount').textContent = '';
+            new bootstrap.Modal(document.getElementById('businessModalajout')).show();
+        }
+
+        function handlePhotoUpload(input) {
+            const previews = document.getElementById('filePreviews');
+            const count = document.getElementById('photoCount');
+            previews.innerHTML = '';
+            count.textContent = '';
+            const files = Array.from(input.files).slice(0, 5);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const preview = document.createElement('div');
+                    preview.className = "photo-preview";
+                    preview.innerHTML = `
+                        <img src="${e.target.result}">
+                        <button type="button" class="remove-photo" onclick="this.parentElement.remove()">×</button>
+                    `;
+                    previews.appendChild(preview);
+                }
+                reader.readAsDataURL(file);
+            });
+            count.innerHTML = `<i class="bi bi-images"></i> ${files.length} image(s)`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('photosInput')?.addEventListener('change', function () {
+                handlePhotoUpload(this);
+            });
+
+            // Gestion des favoris
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.favorite-toggle-btn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const button = e.target.closest('.favorite-toggle-btn');
+                    const businessId = button.dataset.businessId;
+                    const icon = button.querySelector('.bi');
+                    button.disabled = true;
+
+                    fetch(`/business/${businessId}/favorite-toggle`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'added') {
+                                icon.classList.remove('bi-heart', 'text-secondary');
+                                icon.classList.add('bi-heart-fill', 'text-danger');
+                                showToast('Ajouté aux favoris', 'success');
+                            } else if (data.status === 'removed') {
+                                icon.classList.remove('bi-heart-fill', 'text-danger');
+                                icon.classList.add('bi-heart', 'text-secondary');
+                                showToast('Retiré des favoris', 'info');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error toggling favorite:', error);
+                            showToast('Une erreur est survenue', 'error');
+                        })
+                        .finally(() => {
+                            button.disabled = false;
+                        });
+                }
+            });
+
+            // Toggle favoris section
+            const btn = document.getElementById('toggleFavoritesBtn');
+            const section = document.getElementById('favoritesSection');
+            if(btn && section){
+                btn.addEventListener('click', () => {
+                    if(section.style.display === 'none'){
+                        section.style.display = 'block';
+                        btn.textContent = 'Masquer mes favoris';
+                    } else {
+                        section.style.display = 'none';
+                        btn.innerHTML = '<i class="bi bi-heart-fill me-1"></i> Voir mes favoris';
+                    }
+                });
+            }
+
+            // Auto-submit on filter change
+            document.querySelectorAll('#filterForm select, #filterForm input[type="checkbox"]').forEach(element => {
+                element.addEventListener('change', function() {
+                    document.getElementById('filterForm').submit();
+                });
+            });
+        });
+
+        // Fonction pour supprimer un filtre
+        function removeFilter(filterKey) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete(filterKey);
+            window.location.href = url.toString();
+        }
+
+        // Fonction pour afficher des messages toast
+        function showToast(message, type) {
+            if (typeof bootstrap !== 'undefined') {
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast align-items-center text-bg-${type === 'error' ? 'danger' : type} border-0`;
+                toastEl.setAttribute('role', 'alert');
+                toastEl.setAttribute('aria-live', 'assertive');
+                toastEl.setAttribute('aria-atomic', 'true');
+                toastEl.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+                document.body.appendChild(toastEl);
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+                toastEl.addEventListener('hidden.bs.toast', function() {
+                    document.body.removeChild(toastEl);
+                });
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+
+{% endblock %}

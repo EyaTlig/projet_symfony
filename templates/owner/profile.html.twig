@@ -1,0 +1,938 @@
+{% extends 'base_client.html.twig' %}
+
+{% block title %}{{ owner.name }} - Profil Propriétaire{% endblock %}
+
+{% block body %}
+    <div class="container-fluid py-4 px-4 px-lg-5">
+        <!-- Header du profil -->
+        <div class="row align-items-center mb-5">
+            <div class="col-auto">
+                <div class="avatar-circle-lg bg-gradient-primary text-white d-flex align-items-center justify-content-center">
+                    <span class="fs-3 fw-bold">{{ owner.name|first|upper }}</span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                    <div>
+                        <h1 class="display-6 fw-bold mb-2">{{ owner.name }}</h1>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                                <i class="bi bi-shop me-1"></i>
+                                Propriétaire
+                            </span>
+                            <span class="text-muted">
+                                <i class="bi bi-building me-1"></i>
+                                {{ businesses|length }} commerce{{ businesses|length > 1 ? 's' : '' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-3 mt-md-0">
+                        <button class="btn btn-outline-primary rounded-pill px-4 d-flex align-items-center gap-2">
+                            <i class="bi bi-chat-left-text"></i>
+                            Contacter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        {% if businesses|length > 0 %}
+            <div class="row g-3 mb-5">
+                <div class="col-6 col-md-3">
+                    <div class="stats-card p-3 rounded-3 border">
+                        <div class="text-muted small mb-1">Total d'établissements</div>
+                        <div class="h3 fw-bold text-primary">{{ businesses|length }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stats-card p-3 rounded-3 border">
+                        <div class="text-muted small mb-1">Catégories</div>
+                        <div class="h3 fw-bold text-primary">
+                            {% set uniqueCategories = [] %}
+                            {% for business in businesses %}
+                                {% if business.category and business.category.name not in uniqueCategories %}
+                                    {% set uniqueCategories = uniqueCategories|merge([business.category.name]) %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ uniqueCategories|length }}
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        {% endif %}
+
+        <!-- Titre section commerces -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Ses Établissements</h2>
+                <p class="text-muted mb-0">Découvrez les commerces gérés par {{ owner.name }}</p>
+            </div>
+
+            {% if businesses|length > 0 %}
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-2"
+                                type="button"
+                                data-bs-toggle="dropdown">
+                            <i class="bi bi-filter"></i>
+                            Trier
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?sort=name">Par nom</a></li>
+                            <li><a class="dropdown-item" href="?sort=recent">Plus récents</a></li>
+                            <li><a class="dropdown-item" href="?sort=category">Par catégorie</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 d-flex align-items-center gap-2"
+                                type="button"
+                                data-bs-toggle="dropdown">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                            Vue
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="setGridView()">Grille</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setListView()">Liste</a></li>
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Liste des commerces -->
+        {% if businesses|length > 0 %}
+            <div id="businessesGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                {% for business in businesses %}
+                    <div class="col">
+                        <div class="business-card card border-0 shadow-sm h-100 hover-lift transition-all position-relative"
+                             data-id="{{ business.id }}"
+                             role="button"
+                             tabindex="0"
+                             onclick="openBusinessModal({{ business.id }})"
+                             onkeypress="if(event.key === 'Enter') openBusinessModal({{ business.id }})">
+
+                            <!-- Badge catégorie -->
+                            {% if business.category %}
+                                <div class="position-absolute top-0 start-0 m-3 z-1">
+                                    <span class="badge bg-primary bg-opacity-90 text-white rounded-pill px-3 py-1">
+                                        {{ business.category.name }}
+                                    </span>
+                                </div>
+                            {% endif %}
+
+                            <!-- Carousel photos -->
+                            <div class="position-relative overflow-hidden rounded-top">
+                                {% if business.photos|length > 0 %}
+                                    <div id="carouselOwner{{ business.id }}"
+                                         class="carousel slide"
+                                         data-bs-ride="carousel">
+                                        <div class="carousel-inner ratio ratio-16x9">
+                                            {% for photo in business.photos %}
+                                                <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                                    <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
+                                                         class="d-block w-100 object-fit-cover"
+                                                         alt="{{ business.name }}"
+                                                         loading="lazy">
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+
+                                        {% if business.photos|length > 1 %}
+                                            <button class="carousel-control-prev"
+                                                    type="button"
+                                                    data-bs-target="#carouselOwner{{ business.id }}"
+                                                    data-bs-slide="prev">
+                                                <span class="carousel-control-prev-icon"></span>
+                                            </button>
+                                            <button class="carousel-control-next"
+                                                    type="button"
+                                                    data-bs-target="#carouselOwner{{ business.id }}"
+                                                    data-bs-slide="next">
+                                                <span class="carousel-control-next-icon"></span>
+                                            </button>
+                                            <div class="carousel-indicators position-absolute bottom-0 mb-2">
+                                                {% for photo in business.photos %}
+                                                    <button type="button"
+                                                            data-bs-target="#carouselOwner{{ business.id }}"
+                                                            data-bs-slide-to="{{ loop.index0 }}"
+                                                            class="{% if loop.first %}active{% endif %}"></button>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="ratio ratio-16x9 bg-gradient-light">
+                                        <div class="d-flex align-items-center justify-content-center text-muted">
+                                            <i class="bi bi-building" style="font-size: 3rem;"></i>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Badge nombre de photos -->
+                                {% if business.photos|length > 0 %}
+                                    <div class="position-absolute bottom-0 end-0 m-2 z-1">
+                                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill px-2 py-1 d-flex align-items-center gap-1">
+                                            <i class="bi bi-camera"></i>
+                                            {{ business.photos|length }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Contenu de la card -->
+                            <div class="card-body p-4">
+                                <h5 class="card-title fw-bold mb-2 text-truncate">{{ business.name }}</h5>
+
+                                <div class="mb-3">
+                                    <p class="card-text text-muted small mb-0" style="
+                                        display: -webkit-box;
+                                        -webkit-line-clamp: 2;
+                                        -webkit-box-orient: vertical;
+                                        overflow: hidden;
+                                    ">
+                                        {% if business.description %}
+                                            {% if business.description|length > 120 %}
+                                                {{ business.description|slice(0, 120) }}...
+                                            {% else %}
+                                                {{ business.description }}
+                                            {% endif %}
+                                        {% else %}
+                                            Aucune description disponible
+                                        {% endif %}
+                                    </p>
+                                </div>
+
+                                <!-- Informations -->
+                                <div class="business-info small">
+                                    {% if business.address %}
+                                        <div class="d-flex align-items-center gap-2 text-muted mb-2">
+                                            <i class="bi bi-geo-alt flex-shrink-0"></i>
+                                            <span class="text-truncate">{{ business.address }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    {% if business.phone %}
+                                        <div class="d-flex align-items-center gap-2 text-muted mb-2">
+                                            <i class="bi bi-telephone flex-shrink-0"></i>
+                                            <span>{{ business.phone }}</span>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
+                                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 d-flex align-items-center gap-1">
+                                            <i class="bi bi-eye"></i>
+                                            Voir les détails
+                                        </button>
+
+                                        {% if business.website %}
+                                            <a href="{{ business.website }}"
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-flex align-items-center gap-1"
+                                               onclick="event.stopPropagation()">
+                                                <i class="bi bi-globe"></i>
+                                                Site web
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Carte de visite -->
+                            <div class="card-footer bg-transparent border-top-0 pt-0 px-4 pb-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-circle-sm bg-primary bg-opacity-10 text-primary">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <div class="small">
+                                        <div class="fw-medium">Propriété de</div>
+                                        <div class="text-muted">{{ owner.name }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Vue liste (cachée par défaut) -->
+            <div id="businessesList" class="d-none">
+                {% for business in businesses %}
+                    <div class="card border-0 shadow-sm mb-3 hover-lift"
+                         data-id="{{ business.id }}"
+                         role="button"
+                         onclick="openBusinessModal({{ business.id }})">
+                        <div class="row g-0">
+                            <div class="col-md-3">
+                                {% if business.photos|length > 0 %}
+                                    <img src="{{ asset('uploads/business_photos/' ~ business.photos[0].filename) }}"
+                                         class="img-fluid rounded-start h-100 object-fit-cover"
+                                         alt="{{ business.name }}"
+                                         style="min-height: 200px;">
+                                {% else %}
+                                    <div class="h-100 bg-light d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-building text-muted" style="font-size: 2rem;"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="card-title fw-bold mb-1">{{ business.name }}</h5>
+                                            {% if business.category %}
+                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                                                    {{ business.category.name }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill">
+                                            Détails <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+
+                                    <p class="card-text text-muted mt-3 mb-4">
+                                        {{ business.description|default('Aucune description disponible') }}
+                                    </p>
+
+                                    <div class="row">
+                                        {% if business.address %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center gap-2 text-muted small mb-2">
+                                                    <i class="bi bi-geo-alt"></i>
+                                                    <span>{{ business.address }}</span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+
+                                        {% if business.phone %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center gap-2 text-muted small mb-2">
+                                                    <i class="bi bi-telephone"></i>
+                                                    <span>{{ business.phone }}</span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination si nécessaire -->
+            {% if businesses|length > 12 %}
+                <nav class="mt-5" aria-label="Navigation des pages">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- État vide -->
+            <div class="text-center py-8 my-5">
+                <div class="empty-state-card p-5 rounded-4 shadow-sm mx-auto" style="max-width: 600px;">
+                    <div class="empty-state-icon mb-4">
+                        <i class="bi bi-buildings text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h3 class="mb-3">Aucun commerce pour le moment</h3>
+                    <p class="text-muted mb-4">{{ owner.name }} n'a pas encore ajouté d'établissement.</p>
+                    <button class="btn btn-primary rounded-pill px-4" onclick="history.back()">
+                        <i class="bi bi-arrow-left me-2"></i>Retour
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal pour afficher les détails -->
+    <div class="modal fade" id="businessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+                <div class="modal-header border-bottom-0 pb-0 position-sticky top-0 bg-white z-2 rounded-top-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Fermer"></button>
+                        <h5 class="modal-title fw-bold mb-0">Détails du commerce</h5>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm rounded-pill d-flex align-items-center gap-1"
+                                onclick="printBusinessDetails()">
+                            <i class="bi bi-printer"></i>
+                            Imprimer
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm rounded-pill d-flex align-items-center gap-1"
+                                onclick="shareBusiness()">
+                            <i class="bi bi-share"></i>
+                            Partager
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-body p-0" id="modal-content-area">
+                    <!-- Contenu AJAX -->
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --light-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .avatar-circle-lg {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            background: var(--primary-gradient);
+        }
+
+        .avatar-circle-sm {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .business-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .business-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+        }
+
+        .business-card:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .carousel-indicators button {
+            width: 8px !important;
+            height: 8px !important;
+            border-radius: 50%;
+            margin: 0 3px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: none;
+        }
+
+        .carousel-indicators button.active {
+            background-color: white;
+        }
+
+        .hover-lift {
+            transition: transform 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-2px);
+        }
+
+        .stats-card {
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-color: #667eea !important;
+        }
+
+        .empty-state-card {
+            background: var(--light-gradient);
+            border: 2px dashed #dee2e6;
+        }
+
+        .ratio-16x9 {
+            aspect-ratio: 16 / 9;
+        }
+
+        .object-fit-cover {
+            object-fit: cover;
+        }
+
+        .bg-gradient-light {
+            background: var(--light-gradient);
+        }
+
+        .bg-gradient-primary {
+            background: var(--primary-gradient);
+        }
+
+        .modal-content {
+            border-radius: 1.5rem;
+        }
+
+        .modal-header {
+            padding: 1.5rem 1.5rem 0.5rem;
+        }
+
+        .modal-body {
+            min-height: 400px;
+        }
+
+        /* Animation pour le modal */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .avatar-circle-lg {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+
+            .stats-card .h3 {
+                font-size: 1.5rem;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+
+            .business-card .card-body {
+                padding: 1rem !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            .row.g-4 {
+                --bs-gutter-y: 1rem;
+            }
+        }
+
+        /* Accessibilité */
+        @media (prefers-reduced-motion: reduce) {
+            .business-card,
+            .stats-card,
+            .modal-content {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        /* ------------------------- OUVERTURE MODAL ------------------------- */
+        let currentModal = null;
+
+        function openBusinessModal(id) {
+            const modal = document.getElementById('businessModal');
+            const contentArea = document.getElementById('modal-content-area');
+
+            // Afficher le spinner
+            contentArea.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p class="text-muted mt-3">Chargement des détails...</p>
+                </div>
+            `;
+
+            // Ouvrir le modal
+            currentModal = new bootstrap.Modal(modal);
+            currentModal.show();
+
+            // Charger les données
+            fetch(`/business/${id}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erreur de chargement');
+                    return response.text();
+                })
+                .then(html => {
+                    contentArea.innerHTML = html;
+
+                    // Réinitialiser les événements
+                    attachFileUploadEvents();
+                    initModalInteractions();
+
+                    // Animation d'entrée
+                    const details = contentArea.querySelector('.business-details');
+                    if (details) {
+                        details.style.opacity = '0';
+                        details.style.transform = 'translateY(20px)';
+                        setTimeout(() => {
+                            details.style.transition = 'all 0.3s ease';
+                            details.style.opacity = '1';
+                            details.style.transform = 'translateY(0)';
+                        }, 50);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    contentArea.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3">Erreur de chargement</h5>
+                            <p class="text-muted">Impossible de charger les détails du commerce.</p>
+                            <button class="btn btn-primary mt-2" onclick="openBusinessModal(${id})">
+                                Réessayer
+                            </button>
+                        </div>
+                    `;
+                });
+        }
+
+        /* ------------------------- GESTION DES VUES ------------------------- */
+        function setGridView() {
+            document.getElementById('businessesGrid').classList.remove('d-none');
+            document.getElementById('businessesList').classList.add('d-none');
+
+            // Sauvegarder la préférence
+            localStorage.setItem('businessView', 'grid');
+
+            // Feedback visuel
+            showToast('Vue grille activée', 'success');
+        }
+
+        function setListView() {
+            document.getElementById('businessesGrid').classList.add('d-none');
+            document.getElementById('businessesList').classList.remove('d-none');
+
+            // Sauvegarder la préférence
+            localStorage.setItem('businessView', 'list');
+
+            // Feedback visuel
+            showToast('Vue liste activée', 'success');
+        }
+
+        /* ------------------------- PARTAGE ------------------------- */
+        function shareBusiness() {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.title,
+                    text: 'Découvrez ce commerce sur notre plateforme',
+                    url: window.location.href,
+                })
+                    .catch(error => console.log('Erreur de partage:', error));
+            } else {
+                // Fallback pour les navigateurs qui ne supportent pas l'API Web Share
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => showToast('Lien copié dans le presse-papier', 'success'))
+                    .catch(() => showToast('Erreur lors de la copie', 'error'));
+            }
+        }
+
+        /* ------------------------- IMPRESSION ------------------------- */
+        function printBusinessDetails() {
+            const modalContent = document.getElementById('modal-content-area');
+            const printWindow = window.open('', '_blank');
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Détails du commerce</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .print-header { border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+                        .print-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+                        .print-section { margin-bottom: 30px; }
+                        .print-section h3 { border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+                        .print-images { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
+                        .print-images img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
+                        @media print {
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${modalContent.innerHTML}
+                </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+
+        /* ------------------------- GESTION PHOTOS ------------------------- */
+        function handlePhotoUpload(input, businessId) {
+            const container = document.getElementById(`filePreviews${businessId}`);
+            const countElement = document.getElementById(`photoCount${businessId}`);
+
+            if (!container) return;
+
+            // Réinitialiser
+            const previewContainer = container.querySelector('.d-flex') || container;
+            previewContainer.innerHTML = '';
+            container.classList.add('d-none');
+            if (countElement) countElement.textContent = '';
+
+            const files = Array.from(input.files).slice(0, 5);
+
+            if (files.length > 5) {
+                showToast('Limite de 5 images atteinte. Seules les 5 premières seront utilisées.', 'warning');
+            }
+
+            if (files.length === 0) {
+                container.classList.add('d-none');
+                return;
+            }
+
+            // Afficher les prévisualisations
+            files.forEach((file, index) => {
+                if (!file.type.startsWith('image/')) return;
+
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const preview = document.createElement('div');
+                    preview.className = 'photo-preview position-relative';
+                    preview.style.width = '80px';
+                    preview.style.height = '80px';
+                    preview.innerHTML = `
+                        <img src="${e.target.result}"
+                             class="w-100 h-100 object-fit-cover rounded"
+                             alt="Preview ${index + 1}">
+                        <button type="button"
+                                class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle"
+                                style="width: 24px; height: 24px; padding: 0;"
+                                onclick="removePhoto(this, ${index}, '${businessId}')">
+                            &times;
+                        </button>
+                        <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-50 text-white text-center small py-1">
+                            ${(file.size / 1024).toFixed(1)} KB
+                        </div>
+                    `;
+
+                    previewContainer.appendChild(preview);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            container.classList.remove('d-none');
+            if (countElement) {
+                countElement.innerHTML = `
+                    <i class="bi bi-images me-1"></i>
+                    <span class="fw-medium">${files.length}</span> image${files.length > 1 ? 's' : ''} sélectionnée${files.length > 1 ? 's' : ''}
+                    <span class="text-muted ms-2">(max 5)</span>
+                `;
+            }
+        }
+
+        function removePhoto(btn, index, businessId) {
+            const input = document.getElementById(`photosInput${businessId}`);
+            const container = document.getElementById(`filePreviews${businessId}`);
+            const countElement = document.getElementById(`photoCount${businessId}`);
+
+            if (!input || !container) return;
+
+            // Supprimer visuellement
+            btn.closest('.photo-preview').remove();
+
+            // Mettre à jour le DataTransfer
+            const dt = new DataTransfer();
+            const files = Array.from(input.files);
+            files.splice(index, 1);
+            files.forEach(file => dt.items.add(file));
+            input.files = dt.files;
+
+            // Mettre à jour le compteur
+            const remaining = container.querySelectorAll('.photo-preview').length;
+            if (countElement) {
+                if (remaining === 0) {
+                    container.classList.add('d-none');
+                    countElement.textContent = '';
+                } else {
+                    countElement.innerHTML = `
+                        <i class="bi bi-images me-1"></i>
+                        <span class="fw-medium">${remaining}</span> image${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''}
+                    `;
+                }
+            }
+        }
+
+        function attachFileUploadEvents() {
+            document.querySelectorAll('input[type="file"][id^="photosInput"]').forEach(input => {
+                const businessId = input.id.replace('photosInput', '');
+
+                // Événement de changement
+                input.addEventListener('change', function() {
+                    handlePhotoUpload(this, businessId);
+                });
+
+                // Drag & Drop
+                const container = input.closest('.file-upload-area') || input.parentElement;
+                if (container) {
+                    container.addEventListener('dragover', e => {
+                        e.preventDefault();
+                        container.style.borderColor = '#667eea';
+                        container.style.backgroundColor = '#f0f2ff';
+                    });
+
+                    container.addEventListener('dragleave', () => {
+                        container.style.borderColor = '';
+                        container.style.backgroundColor = '';
+                    });
+
+                    container.addEventListener('drop', e => {
+                        e.preventDefault();
+                        container.style.borderColor = '';
+                        container.style.backgroundColor = '';
+
+                        if (e.dataTransfer.files.length) {
+                            input.files = e.dataTransfer.files;
+                            handlePhotoUpload(input, businessId);
+                        }
+                    });
+                }
+            });
+        }
+
+        /* ------------------------- FONCTIONS UTILITAIRES ------------------------- */
+        function showToast(message, type = 'info') {
+            // Utiliser Toast de Bootstrap si disponible
+            if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+                toastEl.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+
+                document.body.appendChild(toastEl);
+                const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+                toast.show();
+
+                toastEl.addEventListener('hidden.bs.toast', () => {
+                    document.body.removeChild(toastEl);
+                });
+            } else {
+                // Fallback simple
+                alert(message);
+            }
+        }
+
+        function initModalInteractions() {
+            // Ajouter des événements aux éléments du modal chargé
+            const modal = document.getElementById('businessModal');
+
+            // Boutons de navigation dans le carousel
+            modal.querySelectorAll('[data-bs-slide]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+
+            modal.querySelectorAll('.modal-content').forEach(content => {
+                content.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+        }
+
+        /* ------------------------- INITIALISATION ------------------------- */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restaurer la vue préférée
+            const preferredView = localStorage.getItem('businessView') || 'grid';
+            if (preferredView === 'list') {
+                setListView();
+            }
+
+            // Navigation clavier sur les cartes
+            document.querySelectorAll('.business-card').forEach(card => {
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+
+            // Animation d'entrée des cartes
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.business-card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(card);
+            });
+
+            // Empêcher les formulaires dans le modal de fermer le modal
+            document.addEventListener('submit', function(e) {
+                if (e.target.closest('#businessModal')) {
+                    e.preventDefault();
+                    // Gérer la soumission ici si nécessaire
+                }
+            });
+        });
+    </script>
+{% endblock %}

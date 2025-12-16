@@ -1,0 +1,39 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+notification_details:
+  path: /notification/{id}/details
+  controller: App\Controller\NotificationController::details
+  methods: GET
+
+notification_mark_read:
+  path: /notification/{id}/read
+  controller: App\Controller\NotificationController::markAsRead
+  methods: POST
+
+notification_mark_unread:
+  path: /notification/{id}/unread
+  controller: App\Controller\NotificationController::markAsUnread
+  methods: POST
+
+notification_delete:
+  path: /notification/{id}/delete
+  controller: App\Controller\NotificationController::delete
+  methods: DELETE
+
+notifications_mark_all_read:
+  path: /notifications/mark-all-read
+  controller: App\Controller\NotificationController::markAllAsRead
+  methods: POST
+
+notifications_unread_count:
+  path: /notifications/unread-count
+  controller: App\Controller\NotificationController::unreadCount
+  methods: GET
+
+notifications_page:
+  path: /notifications/page
+  controller: App\Controller\NotificationController::notificationsPage
+  methods: GET

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}App Review{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- SweetAlert2 pour les popups -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar fixe */
+        .navbar-fixed {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+            color: #fff;
+            position: fixed;
+            top: 56px; /* hauteur navbar */
+            bottom: 0;
+            overflow-y: auto;
+            padding-top: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+        .nav-logo {
+            height: 50px;
+            width: auto;
+        }
+
+        .sidebar a i {
+            margin-right: 0.5rem;
+        }
+
+        /* Contenu principal */
+        .content {
+            margin-left: 250px;
+            padding: 2rem;
+            padding-top: 5rem; /* pour navbar */
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Styles pour les notifications */
+        .notification-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            min-width: 18px;
+        }
+
+        .notification-dropdown {
+            width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            cursor: pointer;
+            padding: 10px 15px;
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-item.unread {
+            border-left-color: #0d6efd;
+            background-color: #f0f8ff;
+        }
+
+        .notification-item.read {
+            border-left-color: #6c757d;
+        }
+
+        .notification-type {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .notification-type.info {
+            background-color: #17a2b8;
+        }
+
+        .notification-type.warning {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        .notification-type.success {
+            background-color: #28a745;
+        }
+
+        .notification-type.error {
+            background-color: #dc3545;
+        }
+
+        .notification-time {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .notification-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .notification-item:hover .notification-actions {
+            opacity: 1;
+        }
+
+        .delete-notification-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            padding: 0;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .mark-read-btn {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            padding: 0 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .dropdown-header {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+        }
+
+        .dropdown-footer {
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+            margin-top: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                top: 56px;
+                width: 100%;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content {
+                margin-left: 0;
+                padding: 1rem;
+                padding-top: 5rem;
+            }
+
+            .notification-dropdown {
+                width: 300px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .notification-dropdown {
+                width: 280px;
+                right: -50px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+{% if app.request.attributes.get('_route') not in ['app_login', 'app_register'] %}
+
+    <!-- Navbar fixe -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark navbar-fixed">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center fw-bold" href="/admin/dashboard">
+                <img src="{{ asset('images/logo.png') }}" class="nav-logo me-2" alt="Logo">
+                App-Review
+            </a>
+
+            <button class="navbar-toggler d-md-none" type="button" onclick="toggleSidebar()">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="d-flex ms-auto align-items-center">
+                <!-- 🔔 NOTIFICATIONS DANS NAVBAR -->
+                {% if app.user %}
+                    <div class="dropdown me-3">
+                        <a class="nav-link position-relative text-white"
+                           href="#"
+                           role="button"
+                           data-bs-toggle="dropdown"
+                           onclick="loadNotifications()">
+
+                            <i class="bi bi-bell fs-5"></i>
+
+                            {% if unreadCount is defined and unreadCount > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
+                                {{ unreadCount }}
+                            </span>
+                            {% endif %}
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end p-3 notification-dropdown"
+                            id="notification-list">
+                            <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Notifications</h6>
+                                {% if unreadCount is defined and unreadCount > 0 %}
+                                    <button class="btn btn-sm btn-outline-primary" onclick="markAllAsRead()">
+                                        <i class="bi bi-check-all"></i> Tout lire
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <div id="notifications-content">
+                                <!-- Le contenu sera chargé dynamiquement -->
+                            </div>
+
+                        </ul>
+                    </div>
+
+                    <span class="navbar-text me-3">
+                    Bonjour, {{ app.user.name }}
+                </span>
+                    <a class="btn btn-outline-light btn-sm" href="{{ path('app_logout') }}">Déconnexion</a>
+                {% else %}
+                    <a class="btn btn-outline-light btn-sm" href="{{ path('app_login') }}">Connexion</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <ul class="nav flex-column">
+            <li class="nav-item"><a href="{{ path('admin_dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="{{ path('user_index') }}"><i class="bi bi-people"></i> Users</a></li>
+            <li class="nav-item"><a href="{{ path('business_index') }}"><i class="bi bi-building"></i> Businesses</a></li>
+            <li class="nav-item"><a href="{{ path('business_photo_all') }}"><i class="bi bi-image"></i> Business Photos</a></li>
+            <li class="nav-item"><a href="{{ path('category_index') }}"><i class="bi bi-tags"></i> Categories</a></li>
+            <li class="nav-item"><a href="{{ path('review_index') }}"><i class="bi bi-chat-left-text"></i> Reviews</a></li>
+            <li class="nav-item"><a href="{{ path('review_photo_list') }}"><i class="bi bi-camera"></i> Review Photos</a></li>
+
+            <!-- LIEN POUR PAGE DES NOTIFICATIONS -->
+
+        </ul>
+    </div>
+{% endif %}
+
+<!-- Contenu principal -->
+<div class="{% if app.request.attributes.get('_route') in ['app_login', 'app_register'] %}full-height-center{% else %}content{% endif %}">
+    {% block body %}{% endblock %}
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Fonction pour charger les notifications
+    function loadNotifications() {
+        fetch('{{ path("notifications_list") }}')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('notifications-content');
+
+                if (data.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="bi bi-bell-slash fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">Aucune notification</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                data.forEach(n => {
+                    const typeClass = getTypeClass(n.type);
+                    const readClass = n.isRead ? 'read' : 'unread';
+                    const badgeText = n.isRead ? 'Lu' : 'Nouveau';
+
+                    html += `
+                        <div class="notification-item ${readClass}"
+                             onclick="showNotificationPopup(${n.id})"
+                             data-notification-id="${n.id}">
+
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="flex: 1;">
+                                    <span class="${typeClass}">${n.type}</span>
+                                    <h6 class="mb-1 mt-2">${n.title}</h6>
+                                    <p class="mb-1 small text-muted">${n.message.length > 80 ? n.message.substring(0, 80) + '...' : n.message}</p>
+                                    <small class="notification-time">
+                                        <i class="bi bi-clock"></i> ${n.createdAt}
+                                    </small>
+                                </div>
+
+                                <div class="notification-actions">
+                                    <button class="delete-notification-btn"
+                                            onclick="deleteNotification(event, ${n.id})"
+                                            title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <small class="badge ${n.isRead ? 'bg-secondary' : 'bg-primary'}">
+                                    ${badgeText}
+                                </small>
+                                ${!n.isRead ? `
+  <button class="btn btn-sm btn-outline-primary" onclick="markAllAsRead(event)">
+
+                                        <i class="bi bi-check"></i> Lu
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                    `;
+                });
+
+                container.innerHTML = html;
+                updateNotificationBadge();
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des notifications:', error);
+            });
+    }
+
+    // Fonction pour afficher la notification dans un popup
+    function showNotificationPopup(notificationId) {
+        fetch(`/notification/${notificationId}/details`)
+            .then(response => response.json())
+            .then(notification => {
+                // Marquer comme lu automatiquement
+                markAsRead(null, notificationId);
+
+                Swal.fire({
+                    title: notification.title,
+                    html: `
+                        <div class="text-start">
+                            <span class="${getTypeClass(notification.type)} mb-2 d-inline-block">${notification.type}</span>
+                            <p>${notification.message}</p>
+                            <hr>
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> ${notification.createdAt}
+                            </small>
+                        </div>
+                    `,
+                    showCloseButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: 'Fermer',
+                    cancelButtonText: 'Supprimer',
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#dc3545',
+                    showDenyButton: true,
+                    denyButtonText: 'Marquer non lu'
+                }).then((result) => {
+                    if (result.isDenied) {
+                        markAsUnread(notificationId);
+                    } else if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+                        deleteNotification(null, notificationId);
+                    }
+                });
+            });
+    }
+
+    // Fonction pour marquer une notification comme lue
+    function markAsRead(event, notificationId) {
+        if (event) event.stopPropagation();
+
+        fetch(`/notification/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    // Mettre à jour l'affichage
+                    const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (item) {
+                        item.classList.remove('unread');
+                        item.classList.add('read');
+
+                        // Cacher le bouton "Marquer comme lu"
+                        const btn = item.querySelector('.btn-outline-success');
+                        if (btn) btn.style.display = 'none';
+
+                        // Mettre à jour le badge
+                        const badge = item.querySelector('.badge');
+                        if (badge) {
+                            badge.classList.remove('bg-primary');
+                            badge.classList.add('bg-secondary');
+                            badge.textContent = 'Lu';
+                        }
+                    }
+                    updateNotificationBadge();
+                }
+            });
+    }
+
+    // Fonction pour marquer toutes les notifications comme lues
+    // Fonction pour marquer toutes les notifications comme lues
+    function markAllAsRead(event) {
+        if (event) event.stopPropagation();
+
+        fetch('{{ path("notifications_mark_all_read") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    // Recharger les notifications
+                    loadNotifications();
+                    Swal.fire('Succès', 'Toutes les notifications ont été marquées comme lues', 'success');
+                }
+            });
+    }
+
+    // Fonction pour marquer comme non lu
+    function markAsUnread(notificationId) {
+        fetch(`/notification/${notificationId}/unread`, {
+            method: 'POST'
+        })
+            .then(response => {
+                if (response.ok) {
+                    loadNotifications();
+                    Swal.fire('Succès', 'Notification marquée comme non lue', 'success');
+                }
+            });
+    }
+
+    // Fonction pour supprimer une notification
+    function deleteNotification(event, notificationId) {
+        if (event) event.stopPropagation();
+
+        Swal.fire({
+            title: 'Confirmer la suppression',
+            text: "Êtes-vous sûr de vouloir supprimer cette notification ?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/notification/${notificationId}/delete`, {
+                    method: 'DELETE'
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            // Supprimer l'élément du DOM
+                            const item = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                            if (item) {
+                                item.remove();
+                                updateNotificationBadge();
+                            }
+
+                            Swal.fire(
+                                'Supprimé !',
+                                'La notification a été supprimée.',
+                                'success'
+                            );
+                        }
+                    });
+            }
+        });
+    }
+
+    // Fonction pour mettre à jour le badge de notifications
+    function updateNotificationBadge() {
+        fetch('{{ path("notifications_unread_count") }}')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.querySelector('.notification-badge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+    }
+
+    // Fonction utilitaire pour obtenir la classe CSS selon le type
+    function getTypeClass(type) {
+        const types = {
+            'info': 'notification-type info',
+            'warning': 'notification-type warning',
+            'success': 'notification-type success',
+            'error': 'notification-type error',
+            'alert': 'notification-type warning'
+        };
+        return types[type.toLowerCase()] || 'notification-type info';
+    }
+
+    // Toggle sidebar sur mobile
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('show');
+    }
+
+    // Charger les notifications au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Charger le compte initial
+        updateNotificationBadge();
+
+        // Recharger les notifications toutes les 30 secondes
+        setInterval(updateNotificationBadge, 30000);
+    });
+</script>
+
+{% block javascripts %}{% endblock %}
+</body>
+</html>
